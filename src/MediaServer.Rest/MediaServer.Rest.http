@@ -1,0 +1,31 @@
+@MediaServer_Rest_HostAddress = http://localhost:5020
+
+GET {{MediaServer_Rest_HostAddress}}/albums/
+Accept: application/json
+
+###
+
+GET {{MediaServer_Rest_HostAddress}}/artists/
+Accept: application/json
+
+###
+
+GET {{MediaServer_Rest_HostAddress}}/genres/
+Accept: application/json
+
+###
+
+GET {{MediaServer_Rest_HostAddress}}/images/
+Accept: application/json
+
+###
+
+GET {{MediaServer_Rest_HostAddress}}/playlists/
+Accept: application/json
+
+###
+
+GET {{MediaServer_Rest_HostAddress}}/tracks/
+Accept: application/json
+
+###
