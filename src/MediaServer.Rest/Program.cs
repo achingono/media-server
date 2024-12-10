@@ -2,14 +2,14 @@ using MediaServer.Rest;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("Database") ?? "Data Source=Library.db";
-// Add services to the container.
+var connectionString = builder.Configuration.GetConnectionString("Library");
 
+// Add services to the container.
 builder.Services.AddControllers();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<EntityContext>(options => options.UseSqlite(connectionString));
-builder.Services.Configure<EntityContext>(context => context.Database.EnsureCreated());
 
 var app = builder.Build();
 
@@ -17,6 +17,11 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope!.ServiceProvider.GetRequiredService<EntityContext>();
+        context!.Database.EnsureCreated();
+    }
 }
 
 app.UseHttpsRedirection();
