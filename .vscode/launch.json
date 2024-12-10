@@ -25,7 +25,8 @@
             },
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
-                "ASPNETCORE_ConnectionStrings__Library": "Data Source=Library.db"
+                "ASPNETCORE_ConnectionStrings__Library": "Data Source=${workspaceFolder}/data/Library.db",
+                "ROOTPATH": "${workspaceFolder}/media"
             },
             "sourceFileMap": {
                 "/Views": "${workspaceFolder}/Views"

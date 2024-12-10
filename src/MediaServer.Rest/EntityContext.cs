@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MediaServer.Entities;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace MediaServer.Rest;
 
@@ -27,5 +28,7 @@ public class EntityContext : DbContext
     {
         builder.Entity<AlbumImage>().HasKey(x => new { x.AlbumId, x.ImageId });
         builder.Entity<ArtistImage>().HasKey(x => new { x.ArtistId, x.ImageId });
+        builder.Entity<Track>().HasKey(x => x.Id);
+        builder.Entity<Track>().Property(x => x.Id).HasConversion(new GuidToStringConverter());
     }
 }
