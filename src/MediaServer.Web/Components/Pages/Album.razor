@@ -1,0 +1,61 @@
+@page "/albums/{id:guid}"
+@inject HttpClient Client
+
+<PageTitle>@Entity.Name - Album by @Entity.Artist?.Name</PageTitle>
+
+<FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Bottom"  Width="100%">
+    <div>
+        <img alt="@Entity.Name" src="@(Entity.AlbumImages?.FirstOrDefault()?.Url ?? $"https://placehold.co/260x200?text={Entity.Name}&font=roboto")" />        
+    </div>
+    <div>
+        <h6>Album</h6>
+        <h1>@Entity.Name</h1>
+        <h5><strong>@Entity.Artist?.Name</strong> &bull; @(Entity.ReleasedOn.Year) &bull; @(Collection.Count()) songs &bull; @(TimeSpan.FromSeconds(Collection.Sum(x => x.Duration)).ToString("g"))</h5>
+    </div>
+</FluentStack>
+<FluentDataGrid Items="@Collection" RowSize="@DataGridRowSize.Large" ShowHover="true">
+    <SelectColumn TGridItem="Entities.Track"
+            SelectMode="DataGridSelectMode.Multiple" 
+            SelectFromEntireRow="true" 
+            OnSelect="OnSelected"
+            @bind-SelectedItems="@Selection">
+        <SelectAllTemplate>
+        @(context.AllSelected == true ? "✅" : context.AllSelected == null ? "➖" : "⬜")
+        </SelectAllTemplate>
+        <ChildContent>
+        @(Selection!.Contains(context) ? "✅" : " ")
+        </ChildContent>
+    </SelectColumn>
+    <PropertyColumn Property="@(t => t.Number)" Sortable="true" Title="#" />
+    <TemplateColumn Title="Name">
+        @context.Name<br/>
+        <small><small><small>@Entity.Artist?.Name</small></small></small>
+    </TemplateColumn>
+    <PropertyColumn Property="@(t => TimeSpan.FromSeconds(t.Duration))" Format="g" Sortable="true" Title="">
+        <HeaderCellItemTemplate>
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size32.Timer())" Color="@Color.FillInverse" />
+        </HeaderCellItemTemplate>
+    </PropertyColumn>
+</FluentDataGrid>
+
+@code {
+    [Parameter]
+    public Guid? Id { get; set; }
+    private Entities.Album Entity = new();
+    private IQueryable<Entities.Track>? Collection = Enumerable.Empty<Entities.Track>().AsQueryable();
+    private IEnumerable<Entities.Track>? Selection = Enumerable.Empty<Entities.Track>();
+
+    protected void OnSelected ((Entities.Track Item, bool Selected) e) 
+    {
+        if (Selection!.Contains(e.Item) || !e.Selected)
+            Selection = Selection!.Where(x => x != e.Item);
+        else
+            Selection = Selection!.Append(e.Item);
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=Id eq {Id}&$expand=Artist"))!.SingleOrDefault() ?? new();
+        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Track>>($"tracks?filter=Album/Id eq {Id}"))!.AsQueryable() ??
+                    Enumerable.Empty<Entities.Track>().AsQueryable();
+    }
+}

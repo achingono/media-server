@@ -1,0 +1,33 @@
+@page "/artists/{id:guid}"
+@inject HttpClient Client
+
+<PageTitle>@Entity.Name</PageTitle>
+
+<h1>@Entity.Name</h1>
+
+<FluentStack>
+    @foreach (var album in Collection!)
+    {
+        <FluentCard Width="300px" Height="300px">
+            <a href="/albums/@album.Id">
+                <img alt="@album.Name"
+                    src="@(album.AlbumImages?.FirstOrDefault()?.Url ?? $"https://placehold.co/260x200?text={album.Name}&font=roboto")" />
+            </a>
+            <p>
+                <a href="/albums/@album.Id">@album.Name</a>
+            </p>
+        </FluentCard>
+    }
+    </FluentStack>
+    @code {
+    [Parameter]
+    public Guid? Id { get; set; }
+    private Entities.Artist Entity = new();
+    private IQueryable<Entities.Album>? Collection = Enumerable.Empty<Entities.Album>().AsQueryable();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Artist>>($"artists?$filter=Id eq {Id}")).SingleOrDefault();
+        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>("albums"))!.AsQueryable();
+    }
+}

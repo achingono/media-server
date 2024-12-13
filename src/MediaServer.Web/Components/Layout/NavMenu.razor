@@ -1,4 +1,4 @@
-@rendermode InteractiveServer
+﻿@rendermode InteractiveServer
 
 <div class="navmenu">
     <input type="checkbox" title="Menu expand/collapse toggle" id="navmenu-toggle" class="navmenu-icon" />
@@ -6,6 +6,9 @@
     <nav class="sitenav" aria-labelledby="main-menu">
         <FluentNavMenu Id="main-menu" Collapsible="true" Width="250" Title="Navigation menu" @bind-Expanded="expanded" CustomToggle="true">
             <FluentNavLink Href="/" Match="NavLinkMatch.All" Icon="@(new Icons.Regular.Size20.Home())" IconColor="Color.Accent">Home</FluentNavLink>
+            <FluentNavLink Href="playlists" Icon="@(new Icons.Regular.Size20.List())" IconColor="Color.Accent">Playlists</FluentNavLink>
+            <FluentNavLink Href="artists" Icon="@(new Icons.Regular.Size20.PeopleTeam())" IconColor="Color.Accent">Artists</FluentNavLink>
+            <FluentNavLink Href="albums" Icon="@(new Icons.Regular.Size20.Album())" IconColor="Color.Accent">Albums</FluentNavLink>
         </FluentNavMenu>
     </nav>
 </div>

@@ -1,0 +1,28 @@
+@page "/artists"
+@inject HttpClient Client
+
+<PageTitle>Artists</PageTitle>
+
+<h1>Artists</h1>
+
+<FluentStack>
+    @foreach (var artist in Collection!)
+    {
+        <FluentCard Width="300px" Height="300px">
+            <a href="/artists/@artist.Id">
+                <img alt="@artist.Name" src="@(artist.ArtistImages?.FirstOrDefault()?.Url ?? $"https://placehold.co/260x200?text={artist.Name}&font=roboto")" />
+            </a>
+            <p>
+                <a href="/artists/@artist.Id">@artist.Name</a>
+            </p>
+        </FluentCard>
+    }
+</FluentStack>
+@code {
+    private IQueryable<Entities.Artist>? Collection = Enumerable.Empty<Entities.Artist>().AsQueryable();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Artist>>("artists"))!.AsQueryable();
+    }
+}

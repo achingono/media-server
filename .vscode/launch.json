@@ -24,6 +24,9 @@
                 "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
             },
             "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "API__BASEADDRESS__INTERNAL": "http://localhost:5020",
+                "API__BASEADDRESS__EXTERNAL":"https://special-guacamole-9q45qq6px29ppj-5020.app.github.dev"
             },
             "sourceFileMap": {
                 "/Views": "${workspaceFolder}/Views"
