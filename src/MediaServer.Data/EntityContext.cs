@@ -1,12 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MediaServer.Entities;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace MediaServer.Rest;
+namespace MediaServer.Data;
 
 public class EntityContext : DbContext
 {
     public EntityContext(DbContextOptions options) : base(options) { }
+    
     public DbSet<Album> Albums { get; set; }
     public DbSet<AlbumImage> AlbumImages { get; set; }
     public DbSet<Artist> Artists { get; set; }
@@ -26,9 +27,5 @@ public class EntityContext : DbContext
     /// <param name="modelBuilder"></param>
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        builder.Entity<AlbumImage>().HasKey(x => new { x.AlbumId, x.ImageId });
-        builder.Entity<ArtistImage>().HasKey(x => new { x.ArtistId, x.ImageId });
-        builder.Entity<Track>().HasKey(x => x.Id);
-        builder.Entity<Track>().Property(x => x.Id).HasConversion(new GuidToStringConverter());
     }
 }
