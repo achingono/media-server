@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
+using MediaServer.Data;
 
 namespace MediaServer.Rest.Controllers;
 

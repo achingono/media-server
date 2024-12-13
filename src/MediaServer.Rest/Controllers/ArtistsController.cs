@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
 using MediaServer.Entities;
+using MediaServer.Data;
 
 namespace MediaServer.Rest.Controllers;
 
@@ -23,5 +24,18 @@ public class ArtistsController : ControllerBase
     public virtual IQueryable<Artist> GetAll([FromServices] EntityContext dbContext)
     {
         return dbContext.Artists;
+    }
+
+    /// <summary>
+    /// GET /Artists/{id}
+    /// </summary>
+    /// <param name="options">The query in OData format</param>
+    /// <returns></returns>
+    [HttpGet("{id:guid}")]
+    public virtual async Task<IActionResult> Get(Guid id, [FromServices] EntityContext dbContext)
+    {
+        var artist = await dbContext.Artists.FindAsync(id);
+        if (artist == null) return NotFound();
+        return Ok(artist);
     }
 }

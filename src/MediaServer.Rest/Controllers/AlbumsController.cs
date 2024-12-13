@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
 using MediaServer.Entities;
+using MediaServer.Data;
 
 namespace MediaServer.Rest.Controllers;
 
