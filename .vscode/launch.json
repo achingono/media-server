@@ -13,7 +13,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/MediaServer.Rest/bin/Debug/net9.0/MediaServer.Rest.dll",
+            "program": "${workspaceFolder}/src/MediaServer.Rest/bin/Debug/net8.0/MediaServer.Rest.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/MediaServer.Rest",
             "launchSettingsProfile": "http",

@@ -2,7 +2,7 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.222.0/containers/dotnet
 {
 	"name": "C# (.NET)",
-	"image": "mcr.microsoft.com/devcontainers/dotnet:9.0",
+	"image": "mcr.microsoft.com/devcontainers/dotnet:8.0",
 
 	// Configure tool-specific properties.
 	"customizations": {
