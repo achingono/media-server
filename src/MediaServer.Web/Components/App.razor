@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -14,6 +14,12 @@
 <body>
     <Routes />
     <script src="_framework/blazor.web.js"></script>
+    <script>
+        window.PlayAudio = (element) => element.play();
+        window.PauseAudio = (element) => element.pause();
+        window.GetCurrentTime = (element) => Math.round(element.currentTime);
+        window.GetDuration = (element) => Math.round(element.duration);
+    </script>
 </body>
 
 </html>

@@ -1,0 +1,85 @@
+@using MediaServer.Web.Services
+@using MediaServer.Web.State
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@inject IStateService<PlayerState> StateService
+@inject IJSRuntime JSRuntime
+
+<FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center"
+    HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
+    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center"
+        HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
+        <FluentIcon Value="@(new Icons.Regular.Size32.ArrowShuffle())" Color="@Color.FillInverse" />
+        <FluentIcon Value="@(new Icons.Regular.Size32.Previous())" Color="@Color.FillInverse" />
+        <FluentIcon Value="@PlayIcon" Color="@PlayColor" OnClick="PlayPause" />
+        <FluentIcon Value="@(new Icons.Regular.Size32.Next())" Color="@Color.FillInverse" />
+        <FluentIcon Value="@(new Icons.Regular.Size28.ArrowRepeatAll())" Color="@Color.FillInverse" />
+    </FluentStack>
+    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center"
+        HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
+        @TimeSpan.FromSeconds(StateService.State.CurrentTime) <FluentSlider Min="0" Step="1" 
+            Max="StateService.State.Duration" 
+            Value="StateService.State.CurrentTime"/> @TimeSpan.FromSeconds(StateService.State.Duration)
+    </FluentStack>
+    <audio @ref="AudioElement" src="@baseAddress/stream/2a484d70-0ebf-4e01-878e-f7dc333e3bdb" 
+            @oncanplay="OnCanPlay" 
+            @onplaying="OnPlaying"
+            @onpause="OnPause"
+            @onloadedmetadata="OnLoadedMetadaAsync"
+            @ontimeupdate="OnTimeUpdateAsync" />
+</FluentStack>
+@code {
+    private string baseAddress = string.Empty;
+
+    protected ElementReference AudioElement { get; set; }
+    protected Color PlayColor {
+        get {
+            if (StateService.State.CanPlay)
+                return Color.Accent;
+            return Color.FillInverse;
+        }
+    }
+
+    protected Icon PlayIcon {
+        get {
+            if (StateService.State.Playing)
+                return new Icons.Filled.Size48.PauseCircle();
+            return new Icons.Filled.Size48.PlayCircle();
+        }
+    }
+    protected void PlayPause () {
+        if (StateService.State.Playing)
+            JSRuntime.InvokeVoidAsync("PauseAudio", AudioElement);
+        else
+            JSRuntime.InvokeVoidAsync("PlayAudio", AudioElement);
+    }
+
+    protected void OnPause() {
+        StateService.Patch(state => state.Playing = false );
+    }
+
+    protected void OnCanPlay() {
+        StateService.Patch(state => state.CanPlay = true);
+    }
+
+    protected void OnPlaying() {
+        StateService.Patch(state => state.Playing = true);
+    }
+
+    protected async Task OnLoadedMetadaAsync() 
+    {
+        var duration = await JSRuntime.InvokeAsync<int>("GetDuration", AudioElement);
+        StateService.Patch(state => state.Duration = duration);
+    }
+    protected async Task OnTimeUpdateAsync()
+    {
+        var currentTime = await JSRuntime.InvokeAsync<int>("GetCurrentTime", AudioElement);
+        StateService.Patch(state => state.CurrentTime = currentTime);
+    }
+
+    protected override void OnInitialized()
+    {
+        baseAddress = Configuration["Api:BaseAddress:External"] ?? string.Empty;
+        StateService.OnChange += StateHasChanged;
+    }
+}
