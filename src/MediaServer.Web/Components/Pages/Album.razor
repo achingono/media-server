@@ -1,5 +1,6 @@
 @page "/albums/{id:guid}"
 @inject HttpClient Client
+@inject IStateService<QueueState> QueueStateService
 
 <PageTitle>@Entity.Name - Album by @Entity.Artist?.Name</PageTitle>
 
@@ -10,52 +11,50 @@
     <div>
         <h6>Album</h6>
         <h1>@Entity.Name</h1>
-        <h5><strong>@Entity.Artist?.Name</strong> &bull; @(Entity.ReleasedOn.Year) &bull; @(Collection.Count()) songs &bull; @(TimeSpan.FromSeconds(Collection.Sum(x => x.Duration)).ToString("g"))</h5>
+        <h5><a href="/artists/@Entity.Artist?.Id"><strong>@Entity.Artist?.Name</strong></a> &bull; @(Entity.ReleasedOn.Year) &bull; @(Collection.Count()) songs &bull; @(TimeSpan.FromSeconds(Collection.Sum(x => x.Duration)).ToString("g"))</h5>
     </div>
 </FluentStack>
-<FluentDataGrid Items="@Collection" RowSize="@DataGridRowSize.Large" ShowHover="true">
-    <SelectColumn TGridItem="Entities.Track"
-            SelectMode="DataGridSelectMode.Multiple" 
-            SelectFromEntireRow="true" 
-            OnSelect="OnSelected"
-            @bind-SelectedItems="@Selection">
-        <SelectAllTemplate>
-        @(context.AllSelected == true ? "✅" : context.AllSelected == null ? "➖" : "⬜")
-        </SelectAllTemplate>
-        <ChildContent>
-        @(Selection!.Contains(context) ? "✅" : " ")
-        </ChildContent>
+<FluentDataGrid Items="@Collection"  TGridItem="Models.TrackModel"
+RowSize="@DataGridRowSize.Large" ShowHover="true">
+    <SelectColumn TGridItem="Models.TrackModel"
+    SelectMode="DataGridSelectMode.Multiple" 
+    SelectFromEntireRow="false" 
+    Property="@(x => x.IsSelected)"
+    OnSelect="@(e => e.Item.IsSelected = e.Selected)"
+    SelectAll="@(Collection!.All(p => p.IsSelected))"
+    SelectAllChanged="@(all => Collection!.ToList().ForEach(p => p.IsSelected = (all == true)))">
     </SelectColumn>
-    <PropertyColumn Property="@(t => t.Number)" Sortable="true" Title="#" />
+    <PropertyColumn Property="@(t => t.Number)" Sortable="true" Title="#" Width="58px" />
     <TemplateColumn Title="Name">
         @context.Name<br/>
         <small><small><small>@Entity.Artist?.Name</small></small></small>
     </TemplateColumn>
-    <PropertyColumn Property="@(t => TimeSpan.FromSeconds(t.Duration))" Format="g" Sortable="true" Title="">
+    <PropertyColumn Property="@(t => TimeSpan.FromSeconds(t.Duration))" Format="g" Sortable="true" Title="" Width="106px">
         <HeaderCellItemTemplate>
-            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size32.Timer())" Color="@Color.FillInverse" />
+            <FluentIcon Value="@(new Icons.Regular.Size32.Timer())" Color="@Color.FillInverse" />
         </HeaderCellItemTemplate>
     </PropertyColumn>
+    <TemplateColumn Width="58px">
+        <FluentIcon Value="@(new Icons.Regular.Size32.Play())" Color="@Color.FillInverse"
+        OnClick="@(() => PlayTrack(context))" />
+    </TemplateColumn>
 </FluentDataGrid>
 
 @code {
     [Parameter]
     public Guid? Id { get; set; }
     private Entities.Album Entity = new();
-    private IQueryable<Entities.Track>? Collection = Enumerable.Empty<Entities.Track>().AsQueryable();
-    private IEnumerable<Entities.Track>? Selection = Enumerable.Empty<Entities.Track>();
-
-    protected void OnSelected ((Entities.Track Item, bool Selected) e) 
-    {
-        if (Selection!.Contains(e.Item) || !e.Selected)
-            Selection = Selection!.Where(x => x != e.Item);
-        else
-            Selection = Selection!.Append(e.Item);
-    }
+    private IQueryable<Models.TrackModel>? Collection = Enumerable.Empty<Models.TrackModel>().AsQueryable();
+    private QueueState QueueState { get => QueueStateService.State; }
     protected override async Task OnInitializedAsync()
     {
         Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=Id eq {Id}&$expand=Artist"))!.SingleOrDefault() ?? new();
-        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Track>>($"tracks?filter=Album/Id eq {Id}"))!.AsQueryable() ??
-                    Enumerable.Empty<Entities.Track>().AsQueryable();
+        Collection = (await Client.GetFromJsonAsync<IEnumerable<Models.TrackModel>>($"tracks?filter=Album/Id eq {Id}"))!.AsQueryable() ??
+                    Enumerable.Empty<Models.TrackModel>().AsQueryable();
+    }
+
+    protected void PlayTrack(Models.TrackModel track)
+    {
+        QueueStateService.Patch(state => state.Items = [track]);
     }
 }

@@ -5,7 +5,7 @@
 
 <h1>@Entity.Name</h1>
 
-<FluentStack>
+<FluentStack Wrap="true">
     @foreach (var album in Collection!)
     {
         <FluentCard Width="300px" Height="300px">
@@ -28,6 +28,6 @@
     protected override async Task OnInitializedAsync()
     {
         Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Artist>>($"artists?$filter=Id eq {Id}")).SingleOrDefault();
-        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>("albums"))!.AsQueryable();
+        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=ArtistId eq {Id}"))!.AsQueryable();
     }
 }

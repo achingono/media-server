@@ -21,6 +21,7 @@ builder.Services.AddHttpClient(Options.DefaultName,
     );
 // Add services to the container.
 builder.Services.AddScoped<PlayerState>();
+builder.Services.AddScoped<QueueState>();
 builder.Services.Add(ServiceDescriptor.Scoped(typeof(IStateService<>), typeof(StateService<>)));
 
 var app = builder.Build();
