@@ -2,6 +2,7 @@
 @using MediaServer.Web.Services
 @using MediaServer.Web.State
 @using Microsoft.Extensions.Configuration
+@using MediaServer.Web.Components.Player.Buttons
 @inject IConfiguration Configuration
 @inject IStateService<PlayerState> PlayerStateService
 @inject IStateService<QueueState> QueueStateService
@@ -12,9 +13,9 @@ HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center"
     HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
         <FluentIcon Value="@(new Icons.Regular.Size32.ArrowShuffle())" Color="@Color.FillInverse" />
-        <FluentIcon Value="@(new Icons.Regular.Size32.Previous())" Color="@Color.FillInverse" />
-        <FluentIcon Value="@PlayIcon" Color="@PlayColor" OnClick="@(e => PlayPause(PlayerState.Playing))" />
-        <FluentIcon Value="@(new Icons.Regular.Size32.Next())" Color="@Color.FillInverse" />
+        <Previous />
+        <Play AudioElement="AudioElement" />
+        <Next />
         <FluentIcon Value="@(new Icons.Regular.Size28.ArrowRepeatAll())" Color="@Color.FillInverse" />
     </FluentStack>
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center"
@@ -48,21 +49,6 @@ HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
                 return Color.Accent;
             return Color.FillInverse;
         }
-    }
-
-    protected Icon PlayIcon {
-        get {
-            if (PlayerState.Playing)
-                return new Icons.Filled.Size48.PauseCircle();
-            return new Icons.Filled.Size48.PlayCircle();
-        }
-    }
-
-    protected void PlayPause (bool playing) {
-        if (playing)
-            JSRuntime.InvokeVoidAsync("PauseAudio", AudioElement);
-        else
-            JSRuntime.InvokeVoidAsync("PlayAudio", AudioElement);
     }
 
     protected void OnPause() {

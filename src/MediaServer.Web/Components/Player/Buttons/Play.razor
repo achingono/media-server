@@ -1,0 +1,40 @@
+@rendermode InteractiveServer
+@using MediaServer.Web.Services
+@using MediaServer.Web.State
+@inject IStateService<PlayerState> StateService
+@inject IJSRuntime JSRuntime
+
+<FluentIcon Value="@PlayIcon" Color="@PlayColor" OnClick="@(e => PlayPause(PlayerState.Playing))" />
+
+@code {
+    [Parameter]
+    public ElementReference AudioElement { get; set; }
+    private PlayerState PlayerState { get => StateService.State;  }
+    protected Color PlayColor {
+        get {
+            if (PlayerState.CanPlay)
+                return Color.Accent;
+            return Color.FillInverse;
+        }
+    }
+
+    protected Icon PlayIcon {
+        get {
+            if (PlayerState.Playing)
+                return new Icons.Filled.Size48.PauseCircle();
+            return new Icons.Filled.Size48.PlayCircle();
+        }
+    }
+
+    protected void PlayPause (bool playing) {
+        if (playing)
+            JSRuntime.InvokeVoidAsync("PauseAudio", AudioElement);
+        else
+            JSRuntime.InvokeVoidAsync("PlayAudio", AudioElement);
+    }
+
+    protected override void OnInitialized()
+    {
+        StateService.OnChange += StateHasChanged;
+    }
+}

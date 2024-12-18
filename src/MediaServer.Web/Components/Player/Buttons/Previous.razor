@@ -1,0 +1,34 @@
+@rendermode InteractiveServer
+@using MediaServer.Web.Services
+@using MediaServer.Web.State
+@inject IStateService<QueueState> StateService
+@inject IJSRuntime JSRuntime
+
+<FluentIcon Value="@(new Icons.Regular.Size32.Previous())" Color="@Color" OnClick="PlayPrevious" />
+
+@code {
+    [Parameter]
+    public ElementReference AudioElement { get; set; }
+    private QueueState QueueState { get => StateService.State;  }
+    protected Color Color {
+        get {
+            if (QueueState.HasPrevious)
+                return Color.Accent;
+            return Color.FillInverse;
+        }
+    }
+
+    protected void PlayPrevious () {
+        StateService.Patch(state => {
+            state.CurrentIndex = state.CurrentIndex > 0 ? 
+                                    state.CurrentIndex - 1 : 
+                                    state.Items.Count() - 1;
+            state.AutoPlay = true;
+        });
+    }
+
+    protected override void OnInitialized()
+    {
+        StateService.OnChange += StateHasChanged;
+    }
+}

@@ -16,7 +16,7 @@
     </div>
 </FluentStack>
 <FluentDataGrid Items="@Collection"  TGridItem="Models.TrackModel"
-RowSize="@DataGridRowSize.Large" ShowHover="true">
+    ShowHover="true">
     <SelectColumn TGridItem="Models.TrackModel"
     SelectMode="DataGridSelectMode.Multiple" 
     SelectFromEntireRow="false" 
@@ -26,7 +26,7 @@ RowSize="@DataGridRowSize.Large" ShowHover="true">
     SelectAllChanged="@(all => Collection!.ToList().ForEach(p => p.IsSelected = (all == true)))">
     </SelectColumn>
     <PropertyColumn Property="@(t => t.Number)" Sortable="true" Title="#" Width="58px" />
-    <TemplateColumn Title="Name">
+    <TemplateColumn Title="Name" Class="multiline-text">
         @context.Name<br/>
         <small><small><small>@Entity.Artist?.Name</small></small></small>
     </TemplateColumn>
@@ -50,15 +50,17 @@ RowSize="@DataGridRowSize.Large" ShowHover="true">
     protected override async Task OnInitializedAsync()
     {
         Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=Id eq {Id}&$expand=Artist"))!.SingleOrDefault() ?? new();
-        Collection = (await Client.GetFromJsonAsync<IEnumerable<Models.TrackModel>>($"tracks?filter=Album/Id eq {Id}"))!.AsQueryable() ??
+        Collection = (await Client.GetFromJsonAsync<IEnumerable<Models.TrackModel>>($"tracks?filter=Album/Id eq {Id}&$expand=Album($expand=Artist)"))!.AsQueryable() ??
                     Enumerable.Empty<Models.TrackModel>().AsQueryable();
     }
 
     protected void PlayTrack(Models.TrackModel track)
     {
-        track.Album = Entity;
         QueueStateService.Patch(state => {
-            state.Items = [track];
+            state.Items = Collection!;
+            state.CurrentIndex = Collection!.Select((x, i) => new { Item = x, Index = i })
+                                            .FirstOrDefault(x => x.Item.Id == track.Id)?
+                                            .Index ?? 0;
             state.AutoPlay = true;
         });
     }
