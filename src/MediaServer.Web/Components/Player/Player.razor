@@ -21,7 +21,7 @@ HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center"
     HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
         @TimeSpan.FromSeconds(PlayerState.CurrentTime) <FluentSlider Min="0" Step="1" 
-        Max="PlayerState.Duration" 
+        Max="PlayerState.Duration"
         Value="PlayerState.CurrentTime"/> @TimeSpan.FromSeconds(PlayerState.Duration)
     </FluentStack>
     <audio @ref="AudioElement" src="@PlayerSource" 
@@ -29,7 +29,8 @@ HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
         @onplaying="OnPlaying"
         @onpause="OnPause"
         @onloadedmetadata="OnLoadedMetadaAsync"
-        @ontimeupdate="OnTimeUpdateAsync" />
+        @ontimeupdate="OnTimeUpdateAsync"
+        @onended="OnEnded" />
 </FluentStack>
 @code {
     private string baseAddress = string.Empty;
@@ -73,6 +74,15 @@ HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
     {
         var currentTime = await JSRuntime.InvokeAsync<int>("GetCurrentTime", AudioElement);
         PlayerStateService.Patch(state => state.CurrentTime = currentTime);
+    }
+
+    protected void OnEnded()
+    {
+        QueueStateService.Patch(state => {
+            state.CurrentIndex = state.CurrentIndex < state.Items.Count() - 1 ? 
+                                    state.CurrentIndex + 1 : 0;
+            state.AutoPlay = true;
+        });
     }
 
     protected override void OnInitialized()
