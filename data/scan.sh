@@ -9,8 +9,11 @@ function insert_artist() {
   local artist="$1"
   local artist_id=$(generate_guid)
 
+  # Escape single quotes
+  artist=$(echo "$artist" | sed "s/'/''/g")
+
   # Check if artist already exists
-  sqlite3 Library.db "INSERT INTO Artists (Id, Name, Description, CreatedOn, CreatedById)
+  sqlite3 "$database_path" "INSERT INTO Artists (Id, Name, Description, CreatedOn, CreatedById)
     SELECT '$artist_id', '$artist', '', datetime('now'), '$createdbyid'
     WHERE NOT EXISTS (SELECT 1 FROM Artists WHERE Name = '$artist')"
 }
@@ -20,7 +23,12 @@ function insert_album() {
   local album="$2"
   local album_id=$(generate_guid)
 
-  sqlite3 Library.db "INSERT INTO Albums (Id, Name, Description, ArtistId, GenreId, ReleasedOn, CreatedOn, CreatedById)
+  # Escape single quotes
+  artist=$(echo "$artist" | sed "s/'/''/g")
+  album=$(echo "$album" | sed "s/'/''/g")
+
+  # Check if album already exists and create if not
+  sqlite3 "$database_path" "INSERT INTO Albums (Id, Name, Description, ArtistId, GenreId, ReleasedOn, CreatedOn, CreatedById)
     SELECT '$album_id', '$album', '', (SELECT Id FROM Artists WHERE Name = '$artist'), 'ed71e308-14e7-4464-8f23-37aeae4a0703', datetime('now'), datetime('now'), '$createdbyid'
     WHERE NOT EXISTS (SELECT 1 FROM Albums WHERE Name = '$album' AND ArtistId = (SELECT Id FROM Artists WHERE Name = '$artist'))"
 }
@@ -34,16 +42,28 @@ function insert_track() {
   local track_path="$6"
   local track_id=$(generate_guid)
 
+  # Escape single quotes
+  artist=$(echo "$artist" | sed "s/'/''/g")
+  album=$(echo "$album" | sed "s/'/''/g")
+  track_title=$(echo "$track_title" | sed "s/'/''/g")
+  track_path=$(echo "$track_path" | sed "s/'/''/g")
+
   # Insert track
-  sqlite3 Library.db "INSERT INTO Tracks (Id, Name, Number, Duration, Path, AlbumId, CreatedOn, CreatedById) 
+  sqlite3 "$database_path" "INSERT INTO Tracks (Id, Name, Number, Duration, Path, AlbumId, CreatedOn, CreatedById) 
     VALUES ('$track_id', '$track_title', $track_number, $track_duration, '$track_path', (SELECT Id FROM Albums WHERE Name = '$album' AND ArtistId = (SELECT Id FROM Artists WHERE Name = '$artist')), datetime('now'), '$createdbyid')"
 }
 
 # Main script logic
 input_dir="$1"
+database_path="$2"
 
 if [ -z "$input_dir" ]; then
   echo "Please provide an input directory as an argument."
+  exit 1
+fi
+
+if [ -z "$database_path" ]; then
+  echo "Please provide a database path as an argument."
   exit 1
 fi
 
@@ -63,12 +83,12 @@ find "$input_dir" -type f \( -name "*.mp3" -o -name "*.flac" -o -name "*.wav" -o
   # Extract metadata using ffprobe
   ffprobe_output=$(ffprobe -v error -show_entries stream_tags:format_tags -of json "$file")
 
-  # Parse JSON output
-  artist_name=$(jq -r '.streams[0].tags.ARTIST' <<< "$ffprobe_output")
-  album_name=$(jq -r '.streams[0].tags.ALBUM' <<< "$ffprobe_output")
-  track_number=$(jq -r '.streams[0].tags.track' <<< "$ffprobe_output")
-  track_title=$(jq -r '.streams[0].tags.TITLE' <<< "$ffprobe_output")
-  track_genre=$(jq -r '.streams[0].tags.GENRE' <<< "$ffprobe_output")
+  # Extract metadata from JSON output
+  artist_name=$(jq -r '.streams[0].tags.ARTIST // .format.tags.ARTIST' <<< "$ffprobe_output")
+  album_name=$(jq -r '.streams[0].tags.ALBUM // .format.tags.ALBUM' <<< "$ffprobe_output")
+  track_number=$(jq -r '.streams[0].tags.track // .format.tags.track' <<< "$ffprobe_output")
+  track_title=$(jq -r '.streams[0].tags.TITLE // .format.tags.TITLE' <<< "$ffprobe_output")
+  track_genre=$(jq -r '.streams[0].tags.GENRE // .format.tags.GENRE' <<< "$ffprobe_output")
 
   # Use metadata if available, otherwise use values from file name
   # Fallback to file path if metadata is empty or missing
