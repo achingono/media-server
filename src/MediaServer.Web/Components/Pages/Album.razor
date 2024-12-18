@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject HttpClient Client
 @inject IStateService<QueueState> QueueStateService
+@inject IStateService<PlayerState> PlayerStateService
 
 <PageTitle>@Entity.Name - Album by @Entity.Artist?.Name</PageTitle>
 
@@ -16,7 +17,7 @@
     </div>
 </FluentStack>
 <FluentDataGrid Items="@Collection"  TGridItem="Models.TrackModel"
-    ShowHover="true">
+ShowHover="true">
     <SelectColumn TGridItem="Models.TrackModel"
     SelectMode="DataGridSelectMode.Multiple" 
     SelectFromEntireRow="false" 
@@ -36,17 +37,31 @@
         </HeaderCellItemTemplate>
     </PropertyColumn>
     <TemplateColumn Width="58px">
-        <FluentIcon Value="@(new Icons.Regular.Size32.Play())" Color="@Color.FillInverse"
-        OnClick="@(() => PlayTrack(context))" />
+        <FluentIcon Value="@PlayIcon(context)" Color="@Color.FillInverse"
+        OnClick="@(e => PlayPause(context, PlayerState.Playing))" />
     </TemplateColumn>
 </FluentDataGrid>
 
 @code {
-    [Parameter]
-    public Guid? Id { get; set; }
+        [Parameter]
+        public Guid? Id { get; set; }
     private Entities.Album Entity = new();
     private IQueryable<Models.TrackModel>? Collection = Enumerable.Empty<Models.TrackModel>().AsQueryable();
     private QueueState QueueState { get => QueueStateService.State; }
+    private PlayerState PlayerState { get => PlayerStateService.State; }
+    protected Icon PlayIcon(Models.TrackModel track)
+    {
+        if (track.Id == QueueState.CurrentTrack?.Id && PlayerState.Playing)
+            return new Icons.Filled.Size32.Pause();
+        return new Icons.Regular.Size32.Play();
+    }
+    protected Color PlayColor (Models.TrackModel track)
+    {
+        if (track.Id == QueueState.CurrentTrack?.Id && PlayerState.Playing)
+                return Color.Accent;
+            return Color.FillInverse;
+    }
+    
     protected override async Task OnInitializedAsync()
     {
         Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=Id eq {Id}&$expand=Artist"))!.SingleOrDefault() ?? new();
@@ -54,14 +69,22 @@
                     Enumerable.Empty<Models.TrackModel>().AsQueryable();
     }
 
-    protected void PlayTrack(Models.TrackModel track)
+    protected void PlayPause(Models.TrackModel track, bool playing)
     {
-        QueueStateService.Patch(state => {
-            state.Items = Collection!;
-            state.CurrentIndex = Collection!.Select((x, i) => new { Item = x, Index = i })
-                                            .FirstOrDefault(x => x.Item.Id == track.Id)?
-                                            .Index ?? 0;
-            state.AutoPlay = true;
-        });
+        if (playing)
+        {
+            QueueStateService.Patch(state => state.AutoPlay = false);
+        }
+        else
+        {
+            QueueStateService.Patch(state =>
+            {
+                state.Items = Collection!;
+                state.CurrentIndex = Collection!.Select((x, i) => new { Item = x, Index = i })
+                                                .FirstOrDefault(x => x.Item.Id == track.Id)?
+                                                .Index ?? 0;
+                state.AutoPlay = true;
+            });
+        }
     }
 }

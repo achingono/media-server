@@ -94,6 +94,9 @@ HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
             if (QueueState.AutoPlay) {
                 JSRuntime.InvokeVoidAsync("PlayAudio", AudioElement);
             }
+            else if (PlayerState.Playing) {
+                JSRuntime.InvokeVoidAsync("PauseAudio", AudioElement);
+            }
         };
     }
 }
