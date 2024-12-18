@@ -13,7 +13,7 @@ HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
     HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
         <FluentIcon Value="@(new Icons.Regular.Size32.ArrowShuffle())" Color="@Color.FillInverse" />
         <FluentIcon Value="@(new Icons.Regular.Size32.Previous())" Color="@Color.FillInverse" />
-        <FluentIcon Value="@PlayIcon" Color="@PlayColor" OnClick="PlayPause" />
+        <FluentIcon Value="@PlayIcon" Color="@PlayColor" OnClick="@(e => PlayPause(PlayerState.Playing))" />
         <FluentIcon Value="@(new Icons.Regular.Size32.Next())" Color="@Color.FillInverse" />
         <FluentIcon Value="@(new Icons.Regular.Size28.ArrowRepeatAll())" Color="@Color.FillInverse" />
     </FluentStack>
@@ -24,11 +24,11 @@ HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
         Value="PlayerState.CurrentTime"/> @TimeSpan.FromSeconds(PlayerState.Duration)
     </FluentStack>
     <audio @ref="AudioElement" src="@PlayerSource" 
-    @oncanplay="OnCanPlay" 
-    @onplaying="OnPlaying"
-    @onpause="OnPause"
-    @onloadedmetadata="OnLoadedMetadaAsync"
-    @ontimeupdate="OnTimeUpdateAsync" />
+        @oncanplay="OnCanPlay" 
+        @onplaying="OnPlaying"
+        @onpause="OnPause"
+        @onloadedmetadata="OnLoadedMetadaAsync"
+        @ontimeupdate="OnTimeUpdateAsync" />
 </FluentStack>
 @code {
     private string baseAddress = string.Empty;
@@ -58,8 +58,8 @@ HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
         }
     }
 
-    protected void PlayPause () {
-        if (PlayerState.Playing)
+    protected void PlayPause (bool playing) {
+        if (playing)
             JSRuntime.InvokeVoidAsync("PauseAudio", AudioElement);
         else
             JSRuntime.InvokeVoidAsync("PlayAudio", AudioElement);
@@ -93,6 +93,11 @@ HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
     {
         baseAddress = Configuration["Api:BaseAddress:External"] ?? string.Empty;
         PlayerStateService.OnChange += StateHasChanged;
-        QueueStateService.OnChange += StateHasChanged;
+        QueueStateService.OnChange += () => {
+            StateHasChanged();
+            if (QueueState.AutoPlay) {
+                JSRuntime.InvokeVoidAsync("PlayAudio", AudioElement);
+            }
+        };
     }
 }

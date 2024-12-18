@@ -1,4 +1,5 @@
 @page "/albums/{id:guid}"
+@rendermode InteractiveServer
 @inject HttpClient Client
 @inject IStateService<QueueState> QueueStateService
 
@@ -55,6 +56,10 @@ RowSize="@DataGridRowSize.Large" ShowHover="true">
 
     protected void PlayTrack(Models.TrackModel track)
     {
-        QueueStateService.Patch(state => state.Items = [track]);
+        track.Album = Entity;
+        QueueStateService.Patch(state => {
+            state.Items = [track];
+            state.AutoPlay = true;
+        });
     }
 }

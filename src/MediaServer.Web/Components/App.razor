@@ -15,7 +15,12 @@
     <Routes />
     <script src="_framework/blazor.web.js"></script>
     <script>
-        window.PlayAudio = (element) => element.play();
+        window.PlayAudio = (element) => {
+            // Play audio if player is ready
+            if (element.readyState < 2)
+                element.oncanplay = (event) => element.play();
+            element.play();
+        }
         window.PauseAudio = (element) => element.pause();
         window.GetCurrentTime = (element) => Math.round(element.currentTime);
         window.GetDuration = (element) => Math.round(element.duration);
