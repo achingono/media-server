@@ -1,0 +1,12 @@
+.album-cover {
+    width: 200px;
+}
+.current-track {
+    width: 400px;
+}
+.player {
+    flex-grow: 1;
+}
+.controls {
+    width: 200px;
+}
