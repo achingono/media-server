@@ -26,7 +26,7 @@
     SelectAll="@(Collection!.All(p => p.IsSelected))"
     SelectAllChanged="@(all => Collection!.ToList().ForEach(p => p.IsSelected = (all == true)))">
     </SelectColumn>
-    <PropertyColumn Property="@(t => t.Number)" Sortable="true" Title="#" Width="58px" />
+    <PropertyColumn Property="@(t => t.Number)" Sortable="true" Title="#" Width="65px" />
     <TemplateColumn Title="Name" Class="multiline-text">
         @context.Name<br/>
         <small><small><small>@Entity.Artist?.Name</small></small></small>
@@ -38,13 +38,13 @@
     </PropertyColumn>
     <TemplateColumn Width="58px">
         <FluentIcon Value="@PlayIcon(context)" Color="@Color.FillInverse"
-        OnClick="@(e => PlayPause(context, PlayerState.Playing))" />
+        OnClick="@(e => PlayPause(context))" />
     </TemplateColumn>
 </FluentDataGrid>
 
 @code {
-        [Parameter]
-        public Guid? Id { get; set; }
+    [Parameter]
+    public Guid? Id { get; set; }
     private Entities.Album Entity = new();
     private IQueryable<Models.TrackModel>? Collection = Enumerable.Empty<Models.TrackModel>().AsQueryable();
     private QueueState QueueState { get => QueueStateService.State; }
@@ -65,13 +65,13 @@
     protected override async Task OnInitializedAsync()
     {
         Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=Id eq {Id}&$expand=Artist"))!.SingleOrDefault() ?? new();
-        Collection = (await Client.GetFromJsonAsync<IEnumerable<Models.TrackModel>>($"tracks?filter=Album/Id eq {Id}&$expand=Album($expand=Artist)"))!.AsQueryable() ??
+        Collection = (await Client.GetFromJsonAsync<IEnumerable<Models.TrackModel>>($"tracks?filter=Album/Id eq {Id}&$expand=Album($expand=Artist)&$orderby=Number"))!.AsQueryable() ??
                     Enumerable.Empty<Models.TrackModel>().AsQueryable();
     }
 
-    protected void PlayPause(Models.TrackModel track, bool playing)
+    protected void PlayPause(Models.TrackModel track)
     {
-        if (playing)
+        if (track.Id == QueueState.CurrentTrack?.Id && PlayerState.Playing)
         {
             QueueStateService.Patch(state => state.AutoPlay = false);
         }
