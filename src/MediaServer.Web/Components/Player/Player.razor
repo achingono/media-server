@@ -19,20 +19,22 @@ HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
         <FluentIcon Value="@(new Icons.Regular.Size28.ArrowRepeatAll())" Color="@Color.FillInverse" />
     </FluentStack>
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center"
-    HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
-        @TimeSpan.FromSeconds(PlayerState.CurrentTime) <FluentSlider Min="0" Step="1" 
-        Max="PlayerState.Duration"
-        Value="PlayerState.CurrentTime"/> @TimeSpan.FromSeconds(PlayerState.Duration)
+        HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
+        <audio @ref="AudioElement" src="@PlayerSource" 
+            data-timeid="@TimeId" data-sliderid="@SliderId"
+            @oncanplay="OnCanPlay" @onplaying="OnPlaying" @onpause="OnPause"
+            @onloadedmetadata="OnLoadedMetadaAsync" @onended="OnEnded" />
+        <div id="@TimeId"></div>
+        <fluent-slider id="@SliderId" class="horizontal" orientation="horizontal" aria-orientation="horizontal"
+            mode="single-value" role="slider" tabindex="0" step="1" min="0" aria-valuemin="0" max="@PlayerState.Duration" aria-valuemax="@PlayerState.Duration"
+            value="0" aria-valuenow="0" current-value="0"></fluent-slider>
+        <div>@TimeSpan.FromSeconds(PlayerState.Duration).ToString("g")</div>
     </FluentStack>
-    <audio @ref="AudioElement" src="@PlayerSource" 
-        @oncanplay="OnCanPlay" 
-        @onplaying="OnPlaying"
-        @onpause="OnPause"
-        @onloadedmetadata="OnLoadedMetadaAsync"
-        @ontimeupdate="OnTimeUpdateAsync"
-        @onended="OnEnded" />
 </FluentStack>
 @code {
+    private string TimeId => "t" + $"{Guid.NewGuid()}".Substring(24);
+    private string SliderId => "s" + $"{Guid.NewGuid()}".Substring(24);
+    private string DurationId => "d" + $"{Guid.NewGuid()}".Substring(24);
     private string baseAddress = string.Empty;
     private PlayerState PlayerState { get => PlayerStateService.State;  }
     private QueueState QueueState { get => QueueStateService.State;  }

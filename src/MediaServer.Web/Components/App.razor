@@ -15,15 +15,55 @@
     <Routes />
     <script src="_framework/blazor.web.js"></script>
     <script>
+        window.InitializePlayer = (element) => {
+            element.addEventListener("loadedmetadata", (event) => {
+                const target = event.currentTarget;
+                const parent = target.parentElement;
+                const duration = Math.round(target.duration);
+
+                const sliderElement = parent.querySelector(`#${target.dataset.sliderid}`);
+                const durationElement = parent.querySelector(`#${target.dataset.durationid}`);
+
+                if (sliderElement && durationElement) {
+                    durationElement.innerHTML = duration;
+                    sliderElement.setAttribute("max", duration);
+                    sliderElement.setAttribute("aria-valuemax", duration);
+                } else {
+                    console.error("Slider or duration element not found.");
+                }
+            });
+
+            element.addEventListener("timeupdate", UpdateTime);
+        };
         window.PlayAudio = (element) => {
             // Play audio if player is ready
-            if (element.readyState < 2)
-                element.oncanplay = (event) => element.play();
-            element.play();
+            if (element.readyState < 2) {
+                element.oncanplay = (event) => {
+                    element.ontimeupdate = window.UpdateTime;
+                    element.play();
+                };
+            }
+            else {
+                element.ontimeupdate = window.UpdateTime;
+                element.play();
+            }
         }
         window.PauseAudio = (element) => element.pause();
         window.GetCurrentTime = (element) => Math.round(element.currentTime);
         window.GetDuration = (element) => Math.round(element.duration);
+        window.UpdateTime = (event) => {
+            const target = event.currentTarget;
+            const currentTime = Math.round(target.currentTime);
+            const timeElement = target.nextElementSibling;
+            const sliderElement = timeElement.nextElementSibling;
+
+            if (timeElement && sliderElement) {
+                timeElement.innerHTML = new Date(currentTime * 1000).toISOString().slice(11, 19);;
+                sliderElement.value = currentTime; // Update slider value directly
+            } else {
+                console.error("Time or slider element not found.");
+            }
+        }
     </script>
 </body>
 
