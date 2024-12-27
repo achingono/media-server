@@ -13,7 +13,7 @@
     <div>
         <h6>Album</h6>
         <h1>@Entity.Name</h1>
-        <h5><a href="/artists/@Entity.Artist?.Id"><strong>@Entity.Artist?.Name</strong></a> &bull; @(Entity.ReleasedOn.Year) &bull; @(Collection.Count()) songs &bull; @(TimeSpan.FromSeconds(Collection.Sum(x => x.Duration)).ToString("g"))</h5>
+        <h5><a href="/artists/@Entity.Artist?.Id"><strong>@Entity.Artist?.Name</strong></a> &bull; @(Entity.ReleasedOn.Year) &bull; @(Collection?.Count()??0) songs &bull; @(TimeSpan.FromSeconds(Collection?.Sum(x => x.Duration)??0).ToString("g"))</h5>
     </div>
 </FluentStack>
 
@@ -23,12 +23,12 @@
     [Parameter]
     public Guid? Id { get; set; }
     private Entities.Album Entity = new();
-    private IQueryable<Models.TrackModel>? Collection = Enumerable.Empty<Models.TrackModel>().AsQueryable();
+    private IQueryable<Entities.Track>? Collection = Enumerable.Empty<Entities.Track>().AsQueryable();
     
     protected override async Task OnParametersSetAsync()
     {
         Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=Id eq {Id}&$expand=Artist"))!.SingleOrDefault() ?? new();
-        Collection = (await Client.GetFromJsonAsync<IEnumerable<Models.TrackModel>>($"tracks?filter=Album/Id eq {Id}&$expand=Album($expand=Artist)&$orderby=Number"))!.AsQueryable() ??
-                    Enumerable.Empty<Models.TrackModel>().AsQueryable();
+        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Track>>($"tracks?filter=Album/Id eq {Id}&$expand=Album($expand=Artist)&$orderby=Number"))!.AsQueryable() ??
+                    Enumerable.Empty<Entities.Track>().AsQueryable();
     }
 }

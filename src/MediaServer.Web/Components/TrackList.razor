@@ -1,29 +1,30 @@
+@using MediaServer.Web.Models
 @rendermode InteractiveServer
 @inject IStateService<QueueState> QueueStateService
 @inject IStateService<PlayerState> PlayerStateService
 
-<FluentDataGrid Items="@Items"  TGridItem="Models.TrackModel"
-ShowHover="true" RowSize="DataGridRowSize.Large">
-    <SelectColumn TGridItem="Models.TrackModel"
+<FluentDataGrid Items="@Queue"  TGridItem="QueueModel<Entities.Track>"
+    ShowHover="true" RowSize="DataGridRowSize.Large" RowStyle="@RowStyle">
+    <SelectColumn TGridItem="QueueModel<Entities.Track>"
     SelectMode="DataGridSelectMode.Multiple" 
     SelectFromEntireRow="false" 
     Property="@(x => x.IsSelected)"
     OnSelect="@(e => e.Item.IsSelected = e.Selected)"
-    SelectAll="@(Items!.All(p => p.IsSelected))"
-    SelectAllChanged="@(all => Items!.ToList().ForEach(p => p.IsSelected = (all == true)))">
+    SelectAll="@(Queue!.All(p => p.IsSelected))"
+    SelectAllChanged="@(all => Queue!.ToList().ForEach(p => p.IsSelected = (all == true)))">
     </SelectColumn>
-    <PropertyColumn Property="@(t => t.Number)" Sortable="true" Title="#" Width="65px" />
+    <PropertyColumn Property="@(t => t.Item.Number)" Sortable="true" Title="#" Width="65px" />
     <TemplateColumn Title="Name" Class="multiline-text">
-        @context.Name<br/>
-        <small><small><small>@context.Album?.Artist?.Name</small></small></small>
+        @context.Item.Name<br/>
+        <small><small><small>@context.Item.Album?.Artist?.Name</small></small></small>
     </TemplateColumn>
-    <PropertyColumn Property="@(t => TimeSpan.FromSeconds(t.Duration))" Format="g" Sortable="true" Title="" Width="106px">
+    <PropertyColumn Property="@(t => TimeSpan.FromSeconds(t.Item.Duration))" Format="g" Sortable="true" Title="" Width="106px">
         <HeaderCellItemTemplate>
             <FluentIcon Value="@(new Icons.Regular.Size32.Timer())" Color="@Color.FillInverse" />
         </HeaderCellItemTemplate>
     </PropertyColumn>
     <TemplateColumn Width="58px">
-        <FluentIcon Value="@PlayIcon(context)" Color="@Color.FillInverse"
+        <FluentIcon Value="@PlayIcon(context.Item)" Color="@PlayColor(context.Item)"
         OnClick="@(e => PlayPause(context))" />
     </TemplateColumn>
 </FluentDataGrid>
@@ -32,31 +33,39 @@ ShowHover="true" RowSize="DataGridRowSize.Large">
     [Parameter]
     public Guid? Id { get; set; }
     [Parameter]
-    public IQueryable<Models.TrackModel>? Items { get; set; }
+    public IQueryable<Entities.Track>? Items { get; set; }
+    private IQueryable<QueueModel<Entities.Track>>? Queue => Items?.Select((x, i) => new QueueModel<Entities.Track> { Position = i, Item = x });
     private QueueState QueueState { get => QueueStateService.State; }
     private PlayerState PlayerState { get => PlayerStateService.State; }
-    protected Icon PlayIcon(Models.TrackModel track)
+    protected Icon PlayIcon(Entities.Track track)
     {
-        if (track.Id == QueueState.CurrentTrack?.Id && PlayerState.Playing)
+        if (track.Id == QueueState.Track?.Id && PlayerState.Playing)
             return new Icons.Filled.Size32.Pause();
         return new Icons.Regular.Size32.Play();
     }
-    protected Color PlayColor (Models.TrackModel track)
+    protected Color PlayColor (Entities.Track track)
     {
-        if (track.Id == QueueState.CurrentTrack?.Id && PlayerState.Playing)
+        if (track.Id == QueueState.Track?.Id && PlayerState.Playing)
             return Color.Accent;
         return Color.FillInverse;
     }
-
+    protected string RowStyle (QueueModel<Entities.Track> model)
+    {
+        return (model.Position == QueueState.Position &&
+            model.Item.Id == QueueState.Track?.Id) ? 
+            "background-color: var(--colorBrandBackground); color: var(--colorNeutralForegroundOnBrand);" : string.Empty;
+    }
     protected override void OnInitialized()
     {
         PlayerStateService.OnChange += StateHasChanged;
         QueueStateService.OnChange += StateHasChanged;
     }
 
-    protected void PlayPause(Models.TrackModel track)
+    protected void PlayPause(QueueModel<Entities.Track> model)
     {
-        if (track.Id == QueueState.CurrentTrack?.Id && PlayerState.Playing)
+        if (model.Position == QueueState.Position && 
+            model.Item.Id == QueueState.Track?.Id &&
+            PlayerState.Playing)
         {
             QueueStateService.Patch(state => state.AutoPlay = false);
         }
@@ -64,10 +73,8 @@ ShowHover="true" RowSize="DataGridRowSize.Large">
         {
             QueueStateService.Patch(state =>
             {
-                state.Items = Items!;
-                state.CurrentIndex = Items!.Select((x, i) => new { Item = x, Index = i })
-                                                .FirstOrDefault(x => x.Item.Id == track.Id)?
-                                                .Index ?? 0;
+                state.Items = Queue ?? Enumerable.Empty<QueueModel<Entities.Track>>();
+                state.Position = model.Position;
                 state.AutoPlay = true;
             });
         }

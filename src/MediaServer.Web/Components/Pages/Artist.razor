@@ -27,7 +27,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Artist>>($"artists?$filter=Id eq {Id}")).SingleOrDefault();
+        Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Artist>>($"artists?$filter=Id eq {Id}")??[]).SingleOrDefault() ?? new();
         Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=ArtistId eq {Id}"))!.AsQueryable();
     }
 }

@@ -1,6 +1,4 @@
 @rendermode InteractiveServer
-@using MediaServer.Web.Services
-@using MediaServer.Web.State
 @using Microsoft.Extensions.Configuration
 @using MediaServer.Web.Components.Player.Buttons
 @inject IConfiguration Configuration
@@ -12,37 +10,33 @@
 HorizontalAlignment="HorizontalAlignment.Center">
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center"
     HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
-        <FluentIcon Value="@(new Icons.Regular.Size32.ArrowShuffle())" Color="@Color.FillInverse" />
+        <Shuffle />
         <Previous />
         <Play AudioElement="AudioElement" />
         <Next />
-        <FluentIcon Value="@(new Icons.Regular.Size28.ArrowRepeatAll())" Color="@Color.FillInverse" />
+        <Repeat />
     </FluentStack>
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center"
         HorizontalAlignment="HorizontalAlignment.Center" Width="100%">
         <audio @ref="AudioElement" src="@PlayerSource" 
-            data-timeid="@TimeId" data-sliderid="@SliderId"
             @oncanplay="OnCanPlay" @onplaying="OnPlaying" @onpause="OnPause"
             @onloadedmetadata="OnLoadedMetadaAsync" @onended="OnEnded" />
-        <div id="@TimeId"></div>
-        <fluent-slider id="@SliderId" class="horizontal" orientation="horizontal" aria-orientation="horizontal"
+        <div class="current-time"></div>
+        <fluent-slider class="horizontal" orientation="horizontal" aria-orientation="horizontal"
             mode="single-value" role="slider" tabindex="0" step="1" min="0" aria-valuemin="0" max="@PlayerState.Duration" aria-valuemax="@PlayerState.Duration"
             value="0" aria-valuenow="0" current-value="0"></fluent-slider>
-        <div>@TimeSpan.FromSeconds(PlayerState.Duration).ToString("g")</div>
+        <div class="duration">@TimeSpan.FromSeconds(PlayerState.Duration).ToString("g")</div>
     </FluentStack>
 </FluentStack>
 @code {
-    private string TimeId => "t" + $"{Guid.NewGuid()}".Substring(24);
-    private string SliderId => "s" + $"{Guid.NewGuid()}".Substring(24);
-    private string DurationId => "d" + $"{Guid.NewGuid()}".Substring(24);
     private string baseAddress = string.Empty;
     private PlayerState PlayerState { get => PlayerStateService.State;  }
     private QueueState QueueState { get => QueueStateService.State;  }
     private string PlayerSource { 
         get {
-            if (QueueState.CurrentTrack == null)
+            if (QueueState.Track == null)
                 return string.Empty;
-            return $"{baseAddress}/stream/{QueueState.CurrentTrack?.Id}";
+            return $"{baseAddress}/stream/{QueueState.Track?.Id}";
         }
     }
     protected ElementReference AudioElement { get; set; }
@@ -81,8 +75,7 @@ HorizontalAlignment="HorizontalAlignment.Center">
     protected void OnEnded()
     {
         QueueStateService.Patch(state => {
-            state.CurrentIndex = state.CurrentIndex < state.Items.Count() - 1 ? 
-                                    state.CurrentIndex + 1 : 0;
+            state.Next();
             state.AutoPlay = true;
         });
     }

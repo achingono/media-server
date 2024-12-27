@@ -1,0 +1,47 @@
+@rendermode InteractiveServer
+@inject IStateService<QueueState> StateService
+@inject IJSRuntime JSRuntime
+
+<FluentIcon Value="@Icon" Color="@Color" OnClick="Toggle" />
+
+@code {
+    private QueueState QueueState { get => StateService.State;  }
+
+    protected Icon Icon {
+        get {
+            switch (QueueState.RepeatMode)
+            {
+                case RepeatMode.Single:
+                    return new Icons.Regular.Size24.ArrowRepeat1();
+                case RepeatMode.All:
+                    return new Icons.Regular.Size24.ArrowRepeatAll();
+                default:
+                    return new Icons.Regular.Size24.ArrowRepeatAllOff();
+            }
+        }
+    }
+
+    protected Color Color {
+        get {
+            if (QueueState.RepeatMode != RepeatMode.None)
+                return Color.Accent;
+            return Color.FillInverse;
+        }
+    }
+
+    protected void Toggle () {
+        StateService.Patch(state => {
+            state.RepeatMode = state.RepeatMode switch
+            {
+                RepeatMode.None => RepeatMode.Single,
+                RepeatMode.Single => RepeatMode.All,
+                _ => RepeatMode.None
+            };
+        });
+    }
+
+    protected override void OnInitialized()
+    {
+        StateService.OnChange += StateHasChanged;
+    }
+}

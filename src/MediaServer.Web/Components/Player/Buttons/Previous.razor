@@ -20,9 +20,7 @@
 
     protected void PlayPrevious () {
         StateService.Patch(state => {
-            state.CurrentIndex = state.CurrentIndex > 0 ? 
-                                    state.CurrentIndex - 1 : 
-                                    state.Items.Count() - 1;
+            state.Previous();
             state.AutoPlay = true;
         });
     }

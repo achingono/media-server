@@ -2,24 +2,21 @@
 @inject IStateService<QueueState> StateService
 @inject IJSRuntime JSRuntime
 
-<FluentIcon Value="@(new Icons.Regular.Size32.Next())" Color="@Color" OnClick="PlayNext" />
+<FluentIcon Value="@(new Icons.Regular.Size32.ArrowShuffle())" Color="@Color" OnClick="Toggle" />
 
 @code {
     private QueueState QueueState { get => StateService.State;  }
     protected Color Color {
         get {
-            if (QueueState.HasNext)
+            if (QueueState.Shuffle)
                 return Color.Accent;
             return Color.FillInverse;
         }
     }
 
-    protected void PlayNext () {
+    protected void Toggle () {
         StateService.Patch(state => {
-            if (state.RepeatMode == RepeatMode.Single)
-                state.RepeatMode = RepeatMode.All;
-            state.Next();
-            state.AutoPlay = true;
+            state.Shuffle = !state.Shuffle;
         });
     }
 
