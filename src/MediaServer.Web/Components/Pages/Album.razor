@@ -16,75 +16,19 @@
         <h5><a href="/artists/@Entity.Artist?.Id"><strong>@Entity.Artist?.Name</strong></a> &bull; @(Entity.ReleasedOn.Year) &bull; @(Collection.Count()) songs &bull; @(TimeSpan.FromSeconds(Collection.Sum(x => x.Duration)).ToString("g"))</h5>
     </div>
 </FluentStack>
-<FluentDataGrid Items="@Collection"  TGridItem="Models.TrackModel"
-    ShowHover="true" RowSize="DataGridRowSize.Large">
-    <SelectColumn TGridItem="Models.TrackModel"
-    SelectMode="DataGridSelectMode.Multiple" 
-    SelectFromEntireRow="false" 
-    Property="@(x => x.IsSelected)"
-    OnSelect="@(e => e.Item.IsSelected = e.Selected)"
-    SelectAll="@(Collection!.All(p => p.IsSelected))"
-    SelectAllChanged="@(all => Collection!.ToList().ForEach(p => p.IsSelected = (all == true)))">
-    </SelectColumn>
-    <PropertyColumn Property="@(t => t.Number)" Sortable="true" Title="#" Width="65px" />
-    <TemplateColumn Title="Name" Class="multiline-text">
-        @context.Name<br/>
-        <small><small><small>@Entity.Artist?.Name</small></small></small>
-    </TemplateColumn>
-    <PropertyColumn Property="@(t => TimeSpan.FromSeconds(t.Duration))" Format="g" Sortable="true" Title="" Width="106px">
-        <HeaderCellItemTemplate>
-            <FluentIcon Value="@(new Icons.Regular.Size32.Timer())" Color="@Color.FillInverse" />
-        </HeaderCellItemTemplate>
-    </PropertyColumn>
-    <TemplateColumn Width="58px">
-        <FluentIcon Value="@PlayIcon(context)" Color="@Color.FillInverse"
-        OnClick="@(e => PlayPause(context))" />
-    </TemplateColumn>
-</FluentDataGrid>
+
+<TrackList Items="@Collection" />
 
 @code {
     [Parameter]
     public Guid? Id { get; set; }
     private Entities.Album Entity = new();
     private IQueryable<Models.TrackModel>? Collection = Enumerable.Empty<Models.TrackModel>().AsQueryable();
-    private QueueState QueueState { get => QueueStateService.State; }
-    private PlayerState PlayerState { get => PlayerStateService.State; }
-    protected Icon PlayIcon(Models.TrackModel track)
-    {
-        if (track.Id == QueueState.CurrentTrack?.Id && PlayerState.Playing)
-            return new Icons.Filled.Size32.Pause();
-        return new Icons.Regular.Size32.Play();
-    }
-    protected Color PlayColor (Models.TrackModel track)
-    {
-        if (track.Id == QueueState.CurrentTrack?.Id && PlayerState.Playing)
-                return Color.Accent;
-            return Color.FillInverse;
-    }
     
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
         Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=Id eq {Id}&$expand=Artist"))!.SingleOrDefault() ?? new();
         Collection = (await Client.GetFromJsonAsync<IEnumerable<Models.TrackModel>>($"tracks?filter=Album/Id eq {Id}&$expand=Album($expand=Artist)&$orderby=Number"))!.AsQueryable() ??
                     Enumerable.Empty<Models.TrackModel>().AsQueryable();
-    }
-
-    protected void PlayPause(Models.TrackModel track)
-    {
-        if (track.Id == QueueState.CurrentTrack?.Id && PlayerState.Playing)
-        {
-            QueueStateService.Patch(state => state.AutoPlay = false);
-        }
-        else
-        {
-            QueueStateService.Patch(state =>
-            {
-                state.Items = Collection!;
-                state.CurrentIndex = Collection!.Select((x, i) => new { Item = x, Index = i })
-                                                .FirstOrDefault(x => x.Item.Id == track.Id)?
-                                                .Index ?? 0;
-                state.AutoPlay = true;
-            });
-        }
     }
 }
