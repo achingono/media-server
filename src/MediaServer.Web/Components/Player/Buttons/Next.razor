@@ -5,17 +5,21 @@
 <FluentIcon Value="@(new Icons.Regular.Size32.Next())" Color="@Color" OnClick="PlayNext" />
 
 @code {
-    private QueueState QueueState { get => StateService.State;  }
-    protected Color Color {
-        get {
+    private QueueState QueueState { get => StateService.State; }
+    protected Color Color
+    {
+        get
+        {
             if (QueueState.HasNext)
                 return Color.Accent;
             return Color.FillInverse;
         }
     }
 
-    protected void PlayNext () {
-        StateService.Patch(state => {
+    protected void PlayNext()
+    {
+        StateService.Patch(state =>
+        {
             if (state.RepeatMode == RepeatMode.Single)
                 state.RepeatMode = RepeatMode.All;
             state.Next();

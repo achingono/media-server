@@ -13,12 +13,33 @@ public enum RepeatMode
 public class QueueState
 {
     public bool AutoPlay { get; set; }
-    public bool Shuffle { get; set; }
+    private bool _shuffle = false;
+    public bool Shuffle
+    {
+        get => _shuffle;
+        set
+        {
+            if (value == true && value != _shuffle)
+            {
+                var currentTrack = _sequentialItems.FirstOrDefault(x => x.Position == Position);
+                var currentIndex = _shuffledItems.Select((x, i) => new { Item = x, Index = i }).FirstOrDefault(x => x.Item.Position == Position)!.Index;
+                if (currentTrack != null && currentIndex != 0)
+                {
+                    _shuffledItems = _shuffledItems
+                        .Where(x => x.Position != currentTrack.Position)
+                        .Prepend(currentTrack);
+                }
+            }
+            _shuffle = value;
+        }
+    }
     public RepeatMode RepeatMode { get; set; }
     public int Position { get; set; }
     public Entities.Track? Track => _sequentialItems.FirstOrDefault(x => x.Position == Position)?.Item;
-    public bool HasNext {
-        get {
+    public bool HasNext
+    {
+        get
+        {
             switch (RepeatMode)
             {
                 case RepeatMode.All:
@@ -28,8 +49,10 @@ public class QueueState
             }
         }
     }
-    public bool HasPrevious {
-        get {
+    public bool HasPrevious
+    {
+        get
+        {
             switch (RepeatMode)
             {
                 case RepeatMode.All:
@@ -53,16 +76,27 @@ public class QueueState
         }
         set
         {
-            _shuffledItems = (_sequentialItems == value) ? _shuffledItems : value.OrderBy(x => _random.Next());
-            _sequentialItems = (_sequentialItems == value) ? _sequentialItems : value;
+            if (_sequentialItems != value)
+            {
+                _sequentialItems = value;
+                _shuffledItems = value.OrderBy(x => _random.Next()).ToList();
+                
+                var currentTrack = _sequentialItems.FirstOrDefault(x => x.Position == Position);
+                if (currentTrack != null)
+                {
+                    _shuffledItems = _shuffledItems
+                        .Where(x => x.Position != currentTrack.Position)
+                        .Prepend(currentTrack);
+                }
+            }
         }
     }
 
     public void Next()
     {
-        if (RepeatMode == RepeatMode.Single ||
+        if ((RepeatMode == RepeatMode.Single && AutoPlay) ||
             Items.Count() <= 0) return;
-        
+
         var currentIndex = Items.Select((x, i) => new { Item = x, Index = i }).FirstOrDefault(x => x.Item.Position == Position)!.Index;
 
         if (currentIndex == Items.Count() - 1 && RepeatMode == RepeatMode.None) return;
@@ -77,7 +111,7 @@ public class QueueState
         var count = Items.Count();
         if (RepeatMode == RepeatMode.Single ||
             count <= 0) return;
-        
+
         var currentIndex = Items.Select((x, i) => new { Item = x, Index = i }).FirstOrDefault(x => x.Item.Position == Position)!.Index;
 
         if (currentIndex == 0 && RepeatMode == RepeatMode.None) return;
