@@ -29,5 +29,8 @@ public class AlbumImageTypeConfiguration : EntityTypeConfiguration<AlbumImage>
                 .OnDelete(DeleteBehavior.Restrict);
 
         builder?.Property(x => x.AlbumId).HasConversion(Converter);
+
+        builder?.OwnsOne(x => x.CreatedBy).WithOwner();
+        builder?.OwnsOne(x => x.UpdatedBy).WithOwner();
     }
 }

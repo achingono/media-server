@@ -23,5 +23,8 @@ public class ArtistTypeConfiguration : EntityTypeConfiguration<Artist>
     {
         builder?.HasKey(x => x.Id);
         builder?.Property(x => x.Id).HasConversion(Converter);
+
+        builder?.OwnsOne(x => x.CreatedBy).WithOwner();
+        builder?.OwnsOne(x => x.UpdatedBy).WithOwner();
     }
 }

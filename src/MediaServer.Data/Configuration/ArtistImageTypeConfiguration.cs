@@ -29,5 +29,8 @@ public class ArtistImageTypeConfiguration : EntityTypeConfiguration<ArtistImage>
                 .OnDelete(DeleteBehavior.Restrict);
                 
         builder?.Property(x => x.ArtistId).HasConversion(Converter);
+
+        builder?.OwnsOne(x => x.CreatedBy).WithOwner();
+        builder?.OwnsOne(x => x.UpdatedBy).WithOwner();
     }
 }

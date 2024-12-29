@@ -37,5 +37,8 @@ public class AlbumTypeConfiguration : EntityTypeConfiguration<Album>
                         .OnDelete(DeleteBehavior.Restrict);
 
                 builder?.HasIndex(x => new { x.Name, x.ArtistId }).IsUnique();
+
+                builder?.OwnsOne(x => x.CreatedBy).WithOwner();
+                builder?.OwnsOne(x => x.UpdatedBy).WithOwner();
         }
 }

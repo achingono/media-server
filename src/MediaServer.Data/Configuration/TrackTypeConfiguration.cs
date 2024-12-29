@@ -27,5 +27,8 @@ public class TrackTypeConfiguration : EntityTypeConfiguration<Track>
         builder?.HasOne(x => x.Album)
                 .WithMany(x => x.Tracks)
                 .OnDelete(DeleteBehavior.Restrict);
+
+        builder?.OwnsOne(x => x.CreatedBy).WithOwner();
+        builder?.OwnsOne(x => x.UpdatedBy).WithOwner();
     }
 }
