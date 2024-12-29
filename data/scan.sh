@@ -106,12 +106,32 @@ find "$input_dir" -type f \( -name "*.mp3" -o -name "*.flac" -o -name "*.wav" -o
     track_title="${title%.*}"
   fi
 
-  echo "Inserting artist: $artist_name"
-  insert_artist "$artist_name"
+  # Handle potential collaboration indicators
+  if [[ "$artist_name" =~ "," ]] || [[ "$artist_name" =~ "feat." ]] || [[ "$artist_name" =~ "featuring" ]] || [[ "$artist_name" =~ "with" ]] || [[ "$artist_name" =~ "&" ]]; then
+    # Extract the primary artist (before any collaborator indicator)
+    primary_artist=$(echo "$artist_name" | 
+      sed 's/ feat\.\(.*\)/\1/i;s/ featuring\(.*\)/\1/i;s/ with\(.*\)/\1/i;s/ \&\ \(.*\)/\1/i' | 
+      cut -d',' -f1) 
+  else
+    primary_artist="$artist_name" 
+  fi
+
+  # Insert the primary artist
+  insert_artist "$primary_artist"
+
+  # Split artist names at all collaboration indicators
+  IFS=', ' read -ra artists <<< "$(echo "$artist_name" | sed 's/ feat\.\(.*\)/,\1/i;s/ featuring\(.*\)/,\1/i;s/ with\(.*\)/,\1/i;s/ \&\ \(.*\)/,\1/i')"
+  
+  # Insert collaborating artists (if needed)
+  for artist in "${artists[@]}"; do
+    # Remove potential collaboration indicators from each artist
+    artist=$(echo "$artist" | sed 's/feat.//;s/featuring//;s/with//;s/\&//') 
+    insert_artist "$artist"
+  done
 
   echo "Inserting album: $album_name"
-  insert_album "$artist_name" "$album_name"
+  insert_album "$primary_artist" "$album_name"
 
   echo "Inserting track: $track_number $track_title | $track_path"
-  insert_track "$artist_name" "$album_name" "$track_number" "$track_title" "$track_duration" "$track_path"
+  insert_track "$primary_artist" "$album_name" "$track_number" "$track_title" "$track_duration" "$track_path"
 done
