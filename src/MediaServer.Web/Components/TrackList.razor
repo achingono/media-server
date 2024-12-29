@@ -3,31 +3,33 @@
 @inject IStateService<QueueState> QueueStateService
 @inject IStateService<PlayerState> PlayerStateService
 
-<FluentDataGrid Items="@Queue"  TGridItem="QueueModel<Entities.Track>"
-    ShowHover="true" RowSize="DataGridRowSize.Large" RowStyle="@RowStyle">
-    <SelectColumn TGridItem="QueueModel<Entities.Track>"
-    SelectMode="DataGridSelectMode.Multiple" 
-    SelectFromEntireRow="false" 
-    Property="@(x => x.IsSelected)"
-    OnSelect="@(e => e.Item.IsSelected = e.Selected)"
-    SelectAll="@(Queue!.All(p => p.IsSelected))"
-    SelectAllChanged="@(all => Queue!.ToList().ForEach(p => p.IsSelected = (all == true)))">
-    </SelectColumn>
-    <PropertyColumn Property="@(t => t.Item.Number)" Sortable="true" Title="#" Width="65px" />
-    <TemplateColumn Title="Name" Class="multiline-text">
-        @context.Item.Name<br/>
-        <small><small><small>@context.Item.Album?.Artist?.Name</small></small></small>
-    </TemplateColumn>
-    <PropertyColumn Property="@(t => TimeSpan.FromSeconds(t.Item.Duration))" Format="g" Sortable="true" Title="" Width="106px">
-        <HeaderCellItemTemplate>
-            <FluentIcon Value="@(new Icons.Regular.Size32.Timer())" Color="@Color.FillInverse" />
-        </HeaderCellItemTemplate>
-    </PropertyColumn>
-    <TemplateColumn Width="58px">
-        <FluentIcon Value="@PlayIcon(context.Item)" Color="@PlayColor(context.Item)"
-        OnClick="@(e => PlayPause(context))" />
-    </TemplateColumn>
-</FluentDataGrid>
+<div>
+    <FluentDataGrid Items="@Queue"  TGridItem="QueueModel<Entities.Track>"
+        ShowHover="true" RowSize="DataGridRowSize.Large" RowClass="@RowClass">
+        <SelectColumn TGridItem="QueueModel<Entities.Track>"
+        SelectMode="DataGridSelectMode.Multiple" 
+        SelectFromEntireRow="false" 
+        Property="@(x => x.IsSelected)"
+        OnSelect="@(e => e.Item.IsSelected = e.Selected)"
+        SelectAll="@(Queue!.All(p => p.IsSelected))"
+        SelectAllChanged="@(all => Queue!.ToList().ForEach(p => p.IsSelected = (all == true)))">
+        </SelectColumn>
+        <PropertyColumn Property="@(t => t.Item.Number)" Sortable="true" Title="#" Width="65px" />
+        <TemplateColumn Title="Name" Class="multiline-text">
+            @context.Item.Name<br/>
+            <small><small><small>@context.Item.Album?.Artist?.Name</small></small></small>
+        </TemplateColumn>
+        <PropertyColumn Property="@(t => TimeSpan.FromSeconds(t.Item.Duration))" Format="g" Sortable="true" Title="" Width="106px">
+            <HeaderCellItemTemplate>
+                <FluentIcon Value="@(new Icons.Regular.Size32.Timer())" Color="@Color.FillInverse" />
+            </HeaderCellItemTemplate>
+        </PropertyColumn>
+        <TemplateColumn Width="58px">
+            <FluentIcon Value="@PlayIcon(context.Item)" Color="@PlayColor(context.Item)"
+            OnClick="@(e => PlayPause(context))" />
+        </TemplateColumn>
+    </FluentDataGrid>
+</div>
 
 @code {
     [Parameter]
@@ -46,14 +48,14 @@
     protected Color PlayColor (Entities.Track track)
     {
         if (track.Id == QueueState.Track?.Id && PlayerState.Playing)
-            return Color.Accent;
+            return Color.Fill;
         return Color.FillInverse;
     }
-    protected string RowStyle (QueueModel<Entities.Track> model)
+    protected string RowClass (QueueModel<Entities.Track> model)
     {
         return (model.Position == QueueState.Position &&
             model.Item.Id == QueueState.Track?.Id) ? 
-            "background-color: var(--colorBrandBackground); color: var(--colorNeutralForegroundOnBrand);" : string.Empty;
+            "playing" : string.Empty;
     }
     protected override void OnInitialized()
     {

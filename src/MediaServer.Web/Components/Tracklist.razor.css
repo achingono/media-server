@@ -1,0 +1,5 @@
+::deep table.fluent-data-grid > tbody > tr.playing, 
+::deep table.fluent-data-grid > tbody > tr.playing > td.playing {
+    background-color: var(--accent-fill-active);
+    color: var(--foreground-on-accent-active);
+}
