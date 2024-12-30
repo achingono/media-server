@@ -66,7 +66,7 @@ public class Track
     /// <summary>
     /// The artists who performed this track
     /// </summary>
-    public virtual ICollection<Feature>? Features { get; set; }
+    public virtual ICollection<TrackFeature>? Features { get; set; }
     /// <summary>
     /// The playlists in which this track is added
     /// </summary>

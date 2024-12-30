@@ -61,5 +61,9 @@ public class Artist: IAuditable
     /// <summary>
     /// The performances in which this artist appears
     /// </summary>
-    public virtual ICollection<Feature>? Features { get; set; }
+    public virtual ICollection<TrackFeature>? TrackFeatures { get; set; }
+    /// <summary>
+    /// The albums in which this artist appears
+    /// </summary>
+    public virtual ICollection<AlbumFeature>? AlbumFeatures { get; set; }
 }

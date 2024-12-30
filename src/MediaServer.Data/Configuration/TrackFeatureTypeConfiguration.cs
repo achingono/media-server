@@ -6,13 +6,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace MediaServer.Data;
 
-public class FeatureTypeConfiguration : EntityTypeConfiguration<Feature>
+public class TrackFeatureTypeConfiguration : EntityTypeConfiguration<TrackFeature>
 {
     /// <summary>
     /// Used to convert a guid to string
     /// </summary>
     public GuidToStringConverter Converter { get; }
-    public FeatureTypeConfiguration(GuidToStringConverter converter)
+    public TrackFeatureTypeConfiguration(GuidToStringConverter converter)
     {
         Converter = converter;
     }
@@ -20,7 +20,7 @@ public class FeatureTypeConfiguration : EntityTypeConfiguration<Feature>
     /// Configures indexes, keys and relationships on the Feature entity
     /// </summary>
     /// <param name="builder"></param>
-    public override void Configure(EntityTypeBuilder<Feature> builder)
+    public override void Configure(EntityTypeBuilder<TrackFeature> builder)
     {
         builder?.HasKey(x => new { x.TrackId, x.ArtistId });
         builder?.Property(x => x.TrackId).HasConversion(Converter);
@@ -30,7 +30,7 @@ public class FeatureTypeConfiguration : EntityTypeConfiguration<Feature>
                 .HasForeignKey(x => x.TrackId)
                 .OnDelete(DeleteBehavior.Restrict);
         builder?.HasOne(x => x.Artist)
-                .WithMany(x => x.Features)
+                .WithMany(x => x.TrackFeatures)
                 .HasForeignKey(x => x.ArtistId)
                 .OnDelete(DeleteBehavior.Restrict);
     }

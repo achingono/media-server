@@ -80,4 +80,8 @@ public class Album : IAuditable
     /// The images used to represent the album
     /// </summary>
     public virtual ICollection<AlbumImage>? AlbumImages { get; set; }
+    /// <summary>
+    /// The artists featured in the album
+    /// </summary>
+    public virtual ICollection<AlbumFeature>? AlbumFeatures { get; set; }
 }

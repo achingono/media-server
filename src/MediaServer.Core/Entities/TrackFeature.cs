@@ -1,6 +1,6 @@
 namespace MediaServer.Entities;
 
-public class Feature
+public class TrackFeature
 {
     public Guid TrackId { get; set; }
     public Guid ArtistId { get; set; }
