@@ -1,5 +1,7 @@
 #!/bin/bash
 createdbyid='c2214872-ba70-4aef-9346-f5e365dc1966'
+createdbyemail='system@localhost'
+createdbyfullname='System'
 
 function generate_guid() {
   cat /proc/sys/kernel/random/uuid
@@ -12,10 +14,13 @@ function insert_artist() {
   # Escape single quotes
   artist=$(echo "$artist" | sed "s/'/''/g")
 
-  # Check if artist already exists
-  sqlite3 "$database_path" "INSERT INTO Artists (Id, Name, Description, CreatedOn, CreatedById)
-    SELECT '$artist_id', '$artist', '', datetime('now'), '$createdbyid'
+  # Insert artist if one does not already exists
+  sqlite3 "$database_path" "INSERT INTO Artists (Id, Name, Description, CreatedOn, CreatedBy_Id, CreatedBy_Email, CreatedBy_FullName)
+    SELECT '$artist_id', '$artist', '', datetime('now'), '$createdbyid', '$createdbyemail', '$createdbyfullname'
     WHERE NOT EXISTS (SELECT 1 FROM Artists WHERE Name = '$artist')"
+
+  # return artist id
+  echo "$artist_id"
 }
 
 function insert_album() {
@@ -27,19 +32,24 @@ function insert_album() {
   artist=$(echo "$artist" | sed "s/'/''/g")
   album=$(echo "$album" | sed "s/'/''/g")
 
-  # Check if album already exists and create if not
-  sqlite3 "$database_path" "INSERT INTO Albums (Id, Name, Description, ArtistId, GenreId, ReleasedOn, CreatedOn, CreatedById)
-    SELECT '$album_id', '$album', '', (SELECT Id FROM Artists WHERE Name = '$artist'), 'ed71e308-14e7-4464-8f23-37aeae4a0703', datetime('now'), datetime('now'), '$createdbyid'
+  # Create album if one does not already exists
+  sqlite3 "$database_path" "INSERT INTO Albums (
+    Id, Name, Description, ArtistId, GenreId, ReleasedOn, CreatedOn, CreatedBy_Id, CreatedBy_Email, CreatedBy_FullName
+    )
+    SELECT '$album_id', '$album', '', (SELECT Id FROM Artists WHERE Name = '$artist'), 'ed71e308-14e7-4464-8f23-37aeae4a0703', 
+      datetime('now'), datetime('now'), '$createdbyid', '$createdbyemail', '$createdbyfullname'
     WHERE NOT EXISTS (SELECT 1 FROM Albums WHERE Name = '$album' AND ArtistId = (SELECT Id FROM Artists WHERE Name = '$artist'))"
+
+  # return album id
+  echo "$album_id"
 }
 
 function insert_track() {
-  local artist="$1"
-  local album="$2"
-  local track_number="$3"
-  local track_title="$4"
-  local track_duration="$5"
-  local track_path="$6"
+  local album_id="$1"
+  local track_number="$2"
+  local track_title="$3"
+  local track_duration="$4"
+  local track_path="$5"
   local track_id=$(generate_guid)
 
   # Escape single quotes
@@ -49,8 +59,17 @@ function insert_track() {
   track_path=$(echo "$track_path" | sed "s/'/''/g")
 
   # Insert track
-  sqlite3 "$database_path" "INSERT INTO Tracks (Id, Name, Number, Duration, Path, AlbumId, CreatedOn, CreatedById) 
-    VALUES ('$track_id', '$track_title', $track_number, $track_duration, '$track_path', (SELECT Id FROM Albums WHERE Name = '$album' AND ArtistId = (SELECT Id FROM Artists WHERE Name = '$artist')), datetime('now'), '$createdbyid')"
+  # Insert track
+  sqlite3 "$database_path" "INSERT INTO Tracks (
+      Id, Name, Number, Duration, Path, AlbumId, CreatedOn, CreatedBy_Id, CreatedBy_Email, CreatedBy_FullName
+    ) 
+    VALUES (
+      '$track_id', '$track_title', $track_number, $track_duration, '$track_path', 
+      '$album_id', datetime('now'), '$createdbyid', '$createdbyemail', '$createdbyfullname'
+    )"
+
+  # return track id
+  echo "$track_id"
 }
 
 # Main script logic
@@ -84,16 +103,23 @@ find "$input_dir" -type f \( -name "*.mp3" -o -name "*.flac" -o -name "*.wav" -o
   ffprobe_output=$(ffprobe -v error -show_entries stream_tags:format_tags -of json "$file")
 
   # Extract metadata from JSON output
-  artist_name=$(jq -r '.streams[0].tags.ARTIST // .format.tags.ARTIST' <<< "$ffprobe_output")
+  track_artist=$(jq -r '.streams[0].tags.ARTIST // .format.tags.ARTIST' <<< "$ffprobe_output")
   album_name=$(jq -r '.streams[0].tags.ALBUM // .format.tags.ALBUM' <<< "$ffprobe_output")
+  album_artist=$(jq -r '.streams[0].tags.album_artist // .format.tags.album_artist' <<< "$ffprobe_output")
   track_number=$(jq -r '.streams[0].tags.track // .format.tags.track' <<< "$ffprobe_output")
   track_title=$(jq -r '.streams[0].tags.TITLE // .format.tags.TITLE' <<< "$ffprobe_output")
   track_genre=$(jq -r '.streams[0].tags.GENRE // .format.tags.GENRE' <<< "$ffprobe_output")
+  album_collaborators=()
+  track_collaborators=()
 
   # Use metadata if available, otherwise use values from file name
   # Fallback to file path if metadata is empty or missing
-  if [[ -z "$artist_name" ]]; then
-    artist_name=$(basename "$artist")
+  if [[ -z "$album_artist" ]]; then
+    album_artist=$(basename "$artist")
+  fi
+
+  if [[ -z "$track_artist" ]]; then
+    track_artist=$(basename "$artist")
   fi
 
   if [[ -z "$album_name" ]]; then
@@ -107,31 +133,74 @@ find "$input_dir" -type f \( -name "*.mp3" -o -name "*.flac" -o -name "*.wav" -o
   fi
 
   # Handle potential collaboration indicators
-  if [[ "$artist_name" =~ "," ]] || [[ "$artist_name" =~ "feat." ]] || [[ "$artist_name" =~ "featuring" ]] || [[ "$artist_name" =~ "with" ]] || [[ "$artist_name" =~ "&" ]]; then
+  if [[ "$album_artist" =~ "," ]] || [[ "$album_artist" =~ "feat." ]] || [[ "$album_artist" =~ "featuring" ]] || [[ "$album_artist" =~ "with" ]] || [[ "$album_artist" =~ "&" ]]; then
     # Extract the primary artist (before any collaborator indicator)
-    primary_artist=$(echo "$artist_name" | 
+    primary_artist=$(echo "$album_artist" | 
       sed 's/ feat\.\(.*\)/\1/i;s/ featuring\(.*\)/\1/i;s/ with\(.*\)/\1/i;s/ \&\ \(.*\)/\1/i' | 
       cut -d',' -f1) 
+
+    # Split artist names at all collaboration indicators
+    IFS=',' read -ra album_collaborators <<< "$(echo "$album_artist" | sed 's/ feat\.\(.*\)/,\1/i;s/ featuring\(.*\)/,\1/i;s/ with\(.*\)/,\1/i;s/ \&\ \(.*\)/,\1/i')"
   else
-    primary_artist="$artist_name" 
+    primary_artist="$album_artist" 
+  fi
+
+  # Handle potential collaboration indicators
+  if [[ "$track_artist" =~ "," ]] || [[ "$track_artist" =~ "feat." ]] || [[ "$track_artist" =~ "featuring" ]] || [[ "$track_artist" =~ "with" ]] || [[ "$track_artist" =~ "&" ]]; then
+    # Split artist names at all collaboration indicators
+    IFS=',' read -ra track_collaborators <<< "$(echo "$track_artist" | sed 's/ feat\.\(.*\)/,\1/i;s/ featuring\(.*\)/,\1/i;s/ with\(.*\)/,\1/i;s/ \&\ \(.*\)/,\1/i')"
   fi
 
   # Insert the primary artist
-  insert_artist "$primary_artist"
+  artist_id=$(insert_artist "$primary_artist")
 
-  # Split artist names at all collaboration indicators
-  IFS=', ' read -ra artists <<< "$(echo "$artist_name" | sed 's/ feat\.\(.*\)/,\1/i;s/ featuring\(.*\)/,\1/i;s/ with\(.*\)/,\1/i;s/ \&\ \(.*\)/,\1/i')"
-  
-  # Insert collaborating artists (if needed)
-  for artist in "${artists[@]}"; do
-    # Remove potential collaboration indicators from each artist
-    artist=$(echo "$artist" | sed 's/feat.//;s/featuring//;s/with//;s/\&//') 
-    insert_artist "$artist"
-  done
-
+  # Insert the album
   echo "Inserting album: $album_name"
-  insert_album "$primary_artist" "$album_name"
+  album_id=$(insert_album "$primary_artist" "$album_name")
+
+  # Insert collaborating artists (if needed)
+  if [ ${#album_collaborators[@]} -gt 0 ]; then
+    declare -p album_collaborators
+    for collaborator in "${album_collaborators[@]}"; do
+      # Remove potential collaboration indicators from each artist
+      collaborator=$(echo "$collaborator" | sed 's/feat.//;s/featuring//;s/with//;s/\&//') 
+      echo "Inserting album collaborator: $collaborator"
+      collaborator_id=$(insert_artist "$collaborator")
+
+      # insert album collaborator
+      echo "Inserting album collaborator: $collaborator"
+      sqlite3 "$database_path" "INSERT INTO AlbumFeature (
+          AlbumId, ArtistId
+        )
+        SELECT '$album_id', '$collaborator_id'
+        WHERE NOT EXISTS (
+          SELECT 1 FROM AlbumFeature WHERE AlbumId = '$album_id' AND ArtistId = '$collaborator_id'
+        )"
+    done
+  fi
 
   echo "Inserting track: $track_number $track_title | $track_path"
-  insert_track "$primary_artist" "$album_name" "$track_number" "$track_title" "$track_duration" "$track_path"
+  track_id=$(insert_track "$album_id" "$track_number" "$track_title" "$track_duration" "$track_path")
+
+  # Insert collaborating artists (if needed)
+  if [ ${#track_collaborators[@]} -gt 0 ]; then
+    declare -p track_collaborators
+    for collaborator in "${track_collaborators[@]}"; do
+      # Remove potential collaboration indicators from each artist
+      collaborator=$(echo "$collaborator" | sed 's/feat.//;s/featuring//;s/with//;s/\&//') 
+      echo "Inserting track collaborator: $collaborator"
+      collaborator_id=$(insert_artist "$collaborator")
+
+      # insert track collaborator
+      echo "Inserting track collaborator: $collaborator"
+      sqlite3 "$database_path" "INSERT INTO TrackFeature (
+        TrackId, ArtistId
+        )
+        SELECT '$track_id', '$collaborator_id'
+        WHERE NOT EXISTS (
+          SELECT 1 FROM TrackFeature WHERE TrackId = '$track_id' AND ArtistId = '$collaborator_id'
+        )"
+    done
+  fi
+
 done
