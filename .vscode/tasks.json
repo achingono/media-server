@@ -14,5 +14,12 @@
             ],
             "problemMatcher": "$msCompile"
         },
+        {
+            "type": "dotnet",
+            "task": "build",
+            "group": "build",
+            "problemMatcher": "$msCompile",
+            "label": "dotnet: build"
+        }
     ]
 }
