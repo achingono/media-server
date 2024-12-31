@@ -8,9 +8,9 @@
 <FluentStack Wrap="true">
     @foreach (var artist in Collection!)
     {
-        <FluentCard Width="300px" Height="300px">
+        <FluentCard Width="300px" Height="360px">
             <a href="/artists/@artist.Id">
-                <img alt="@artist.Name" src="@(artist.ArtistImages?.FirstOrDefault()?.Url ?? $"https://placehold.co/260x200?text={artist.Name}&font=roboto")" />
+                <Image Id="@artist.ArtistImages?.FirstOrDefault()?.Id" Title="@artist.Name" Width="260" />
             </a>
             <p>
                 <a href="/artists/@artist.Id">@artist.Name</a>

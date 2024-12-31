@@ -26,7 +26,7 @@
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "API__BASEADDRESS__INTERNAL": "http://localhost:5020",
-                "API__BASEADDRESS__EXTERNAL":"https://special-guacamole-9q45qq6px29ppj-5020.app.github.dev"
+                "API__BASEADDRESS__EXTERNAL": "http://localhost:5020"
             },
             "sourceFileMap": {
                 "/Views": "${workspaceFolder}/Views"
@@ -46,15 +46,11 @@
             "cwd": "${workspaceFolder}/src/MediaServer.Rest",
             "launchSettingsProfile": "http",
             "stopAtEntry": false,
-            // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
-            "serverReadyAction": {
-                "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-            },
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "ASPNETCORE_ConnectionStrings__Library": "Data Source=${workspaceFolder}/data/Library.db",
-                "ROOTPATH": "${workspaceFolder}/media"
+                "ROOTPATH": "${workspaceFolder}/media",
+                "DEFAULTCOVER": "${workspaceFolder}/media/default.jpg"
             },
             "sourceFileMap": {
                 "/Views": "${workspaceFolder}/Views"

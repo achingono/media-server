@@ -1,9 +1,11 @@
 @rendermode InteractiveServer
 @inject IStateService<QueueState> QueueStateService
+@inject HttpClient Client
 
-<FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" Width="100%" Height="148px">
+<FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" Width="100%"
+    Height="148px">
     <div class="album-cover">
-        <img src="https://placehold.co/200x106?text=Current Track&font=roboto" />
+        <Image Id="@ImageId" Title="@Album?.Name" Height="106" />
     </div>
     <div class="current-track">
         <h1>@QueueState.Track?.Name</h1>
@@ -16,7 +18,21 @@
 
 @code {
     private QueueState QueueState { get => QueueStateService.State; }
-    protected override void OnInitialized() 
+    private Entities.Album? Album { get => QueueState.Track?.Album; }
+    private Guid? ImageId {
+        get {
+            if (Album?.AlbumImages?.Any() ?? false)
+                return Album?.AlbumImages?.FirstOrDefault()?.Id;
+            
+            if (Album?.Id != null)
+            {
+                var album = Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=Id eq {Album.Id}&$expand=AlbumImages($select=Id)").Result;
+                return album?.FirstOrDefault()?.AlbumImages?.FirstOrDefault()?.Id;
+            }
+            return null;
+        }
+    }
+    protected override void OnInitialized()
     {
         QueueStateService.OnChange += StateHasChanged;
     }

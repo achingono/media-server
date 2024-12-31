@@ -1,0 +1,29 @@
+@inject IConfiguration Configuration
+
+<img alt="@Title" src="@Url" />        
+
+@code {
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public int? Width { get; set; }
+
+    [Parameter]
+    public int? Height { get; set; }
+
+    private string Url
+    {
+        get
+        {
+            var width = Width.HasValue ? $"width={Width}" : string.Empty;
+            var height = Height.HasValue ? $"height={Height}" : string.Empty;
+            var query = string.Join("&", new[] { width, height }.Where(x => !string.IsNullOrWhiteSpace(x)));
+            var endpoint = Id.HasValue ? $"{Id}" : "default";
+            return $"{Configuration["Api:BaseAddress:External"]}/render/{endpoint}?{query}";
+        }
+    }
+}

@@ -8,7 +8,7 @@
 
 <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Bottom"  Width="100%">
     <div>
-        <img alt="@Entity.Name" src="@(Entity.AlbumImages?.FirstOrDefault()?.Url ?? $"https://placehold.co/260x200?text={Entity.Name}&font=roboto")" />        
+        <Image Id="@Entity.AlbumImages?.FirstOrDefault()?.Id" Title="@Entity.Name" Width="260" />       
     </div>
     <div>
         <h6>Album</h6>
@@ -27,7 +27,7 @@
     
     protected override async Task OnParametersSetAsync()
     {
-        Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=Id eq {Id}&$expand=Artist"))!.SingleOrDefault() ?? new();
+        Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>($"albums?$filter=Id eq {Id}&$expand=Artist,AlbumImages($select=Id)"))!.SingleOrDefault() ?? new();
         Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Track>>($"tracks?filter=Album/Id eq {Id}&$expand=Album($expand=Artist)&$orderby=Number"))!.AsQueryable() ??
                     Enumerable.Empty<Entities.Track>().AsQueryable();
     }

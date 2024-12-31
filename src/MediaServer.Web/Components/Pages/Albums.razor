@@ -8,9 +8,9 @@
 <FluentStack Wrap="true">
     @foreach (var album in Collection!)
     {
-        <FluentCard Width="300px" Height="300px">
+        <FluentCard Width="300px" Height="360px">
             <a href="/albums/@album.Id">
-                <img alt="@album.Name" src="@(album.AlbumImages?.FirstOrDefault()?.Url ?? $"https://placehold.co/260x200?text={album.Name}&font=roboto")" />
+                <Image Id="@album.AlbumImages?.FirstOrDefault()?.Id" Title="@album.Name" Width="260" />
             </a>
             <p>
                 <a href="/albums/@album.Id">@album.Name</a>
@@ -23,6 +23,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>("albums"))!.AsQueryable();
+        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Album>>("albums?$expand=AlbumImages($select=Id)"))!.AsQueryable();
     }
 }
