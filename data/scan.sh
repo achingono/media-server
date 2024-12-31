@@ -9,38 +9,46 @@ function generate_guid() {
 
 function insert_artist() {
   local artist="$1"
-  local artist_id=$(generate_guid)
+  local artist_id
 
   # Escape single quotes
   artist=$(echo "$artist" | sed "s/'/''/g")
 
-  # Insert artist if one does not already exists
-  sqlite3 "$database_path" "INSERT INTO Artists (Id, Name, Description, CreatedOn, CreatedBy_Id, CreatedBy_Email, CreatedBy_FullName)
-    SELECT '$artist_id', '$artist', '', datetime('now'), '$createdbyid', '$createdbyemail', '$createdbyfullname'
-    WHERE NOT EXISTS (SELECT 1 FROM Artists WHERE Name = '$artist')"
+  # Check if artist already exists and insert if not
+  artist_id=$(sqlite3 "$database_path" "SELECT Id FROM Artists WHERE Name = '$artist' COLLATE NOCASE")
+  if [ -z "$artist_id" ]; then
+    artist_id=$(sqlite3 "$database_path" "INSERT INTO Artists (Id, Name, Description, CreatedOn, CreatedBy_Id, CreatedBy_Email, CreatedBy_FullName)
+      VALUES ('$(generate_guid)', '$artist', '', datetime('now'), '$createdbyid', '$createdbyemail', '$createdbyfullname')
+      RETURNING Id")
+  fi
 
-  # return artist id
+  # Return artist id
   echo "$artist_id"
 }
 
 function insert_album() {
-  local artist="$1"
+  local artist_id="$1"
   local album="$2"
-  local album_id=$(generate_guid)
+  local album_id
 
   # Escape single quotes
   artist=$(echo "$artist" | sed "s/'/''/g")
   album=$(echo "$album" | sed "s/'/''/g")
 
   # Create album if one does not already exists
-  sqlite3 "$database_path" "INSERT INTO Albums (
-    Id, Name, Description, ArtistId, GenreId, ReleasedOn, CreatedOn, CreatedBy_Id, CreatedBy_Email, CreatedBy_FullName
-    )
-    SELECT '$album_id', '$album', '', (SELECT Id FROM Artists WHERE Name = '$artist'), 'ed71e308-14e7-4464-8f23-37aeae4a0703', 
-      datetime('now'), datetime('now'), '$createdbyid', '$createdbyemail', '$createdbyfullname'
-    WHERE NOT EXISTS (SELECT 1 FROM Albums WHERE Name = '$album' AND ArtistId = (SELECT Id FROM Artists WHERE Name = '$artist'))"
+  album_id=$(sqlite3 "$database_path" "SELECT Id FROM Albums WHERE Name = '$album' AND ArtistId = '$artist_id'")
+  if [ -z "$album_id" ]; then
+    album_id=$(sqlite3 "$database_path" "INSERT INTO Albums (
+      Id, Name, Description, ArtistId, GenreId, ReleasedOn, CreatedOn, CreatedBy_Id, CreatedBy_Email, CreatedBy_FullName
+      )
+      VALUES (
+        '$(generate_guid)', '$album', '', '$artist_id', 'ed71e308-14e7-4464-8f23-37aeae4a0703', 
+        datetime('now'), datetime('now'), '$createdbyid', '$createdbyemail', '$createdbyfullname'
+      )
+      RETURNING Id")
+  fi
 
-  # return album id
+  # return album id from the database
   echo "$album_id"
 }
 
@@ -58,7 +66,6 @@ function insert_track() {
   track_title=$(echo "$track_title" | sed "s/'/''/g")
   track_path=$(echo "$track_path" | sed "s/'/''/g")
 
-  # Insert track
   # Insert track
   sqlite3 "$database_path" "INSERT INTO Tracks (
       Id, Name, Number, Duration, Path, AlbumId, CreatedOn, CreatedBy_Id, CreatedBy_Email, CreatedBy_FullName
@@ -156,7 +163,7 @@ find "$input_dir" -type f \( -name "*.mp3" -o -name "*.flac" -o -name "*.wav" -o
 
   # Insert the album
   echo "Inserting album: $album_name"
-  album_id=$(insert_album "$primary_artist" "$album_name")
+  album_id=$(insert_album "$artist_id" "$album_name")
 
   # Insert collaborating artists (if needed)
   if [ ${#album_collaborators[@]} -gt 0 ]; then
