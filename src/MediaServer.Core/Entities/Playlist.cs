@@ -44,4 +44,8 @@ public class Playlist
     /// The tracks added to this playlist
     /// </summary>
     public virtual ICollection<Track>? Track { get; set; }
+    /// <summary>
+    /// The images used to represent the playlist
+    /// </summary>
+    public virtual ICollection<PlaylistImage>? PlaylistImages { get; set; }
 }

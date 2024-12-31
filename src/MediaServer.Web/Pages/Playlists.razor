@@ -1,0 +1,38 @@
+@page "/playlists"
+@inject HttpClient Client
+<PageTitle>Playlists</PageTitle>
+<FluentStack Orientation="Orientation.Horizontal">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Left">
+        <h1>Playlists</h1>
+    </FluentStack>
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Right">
+        <FluentButton IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@ShowAddAsync">Create Playlist
+        </FluentButton>
+    </FluentStack>
+</FluentStack>
+
+<FluentStack Wrap="true">
+    @foreach (var item in Collection!)
+    {
+        <FluentCard Width="300px" Height="360px">
+            <a href="/playlists/@item.Id">
+                <Image Id="@item.PlaylistImages?.FirstOrDefault()?.Id" Title="@item.Name" Width="260" />
+            </a>
+            <p>
+                <a href="/playlists/@item.Id">@item.Name</a>
+            </p>
+        </FluentCard>
+    }
+    </FluentStack>
+    @code {
+    private IEnumerable<Entities.Playlist>? Collection = Enumerable.Empty<Entities.Playlist>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Collection = (await
+        Client.GetFromJsonAsync<IEnumerable<Entities.Playlist>>("playlists?$expand=PlaylistImages($select=Id)"));
+    }
+    private async Task ShowAddAsync()
+    {
+    }
+}

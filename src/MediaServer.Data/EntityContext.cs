@@ -18,6 +18,7 @@ public class EntityContext : DbContext
     public DbSet<Genre> Genres { get; set; }
     public DbSet<Image> Images { get; set; }
     public DbSet<Playlist> Playlists { get; set; }
+    public DbSet<PlaylistImage> PlaylistImages { get; set; }
     public DbSet<Track> Tracks { get; set; }
 
     /// <summary>
