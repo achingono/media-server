@@ -79,6 +79,26 @@ function insert_track() {
   echo "$track_id"
 }
 
+function insert_image() {
+  local album_id="$1"
+  local image_path="$2"
+  local image_id=$(generate_guid)
+
+  # Escape single quotes  
+  image_path=$(echo "$image_path" | sed "s/'/''/g")
+
+  # Insert image
+  sqlite3 "$database_path" "INSERT INTO Images (
+      Id, Size, Url, Discriminator, AlbumId, CreatedOn, CreatedBy_Id, CreatedBy_Email, CreatedBy_FullName
+    ) 
+    SELECT 
+      '$image_id', 2, '$image_path', 'AlbumImage', '$album_id', 
+      datetime('now'), '$createdbyid', '$createdbyemail', '$createdbyfullname'
+    WHERE NOT EXISTS (
+      SELECT 1 FROM Images WHERE Url = '$image_path'
+    )"
+}
+
 # Main script logic
 input_dir="$1"
 database_path="$2"
@@ -210,4 +230,30 @@ find "$input_dir" -type f \( -name "*.mp3" -o -name "*.flac" -o -name "*.wav" -o
     done
   fi
 
+  album_cover="$album/cover.jpg"
+  # check if 'cover.jpg' or 'AlbumArt.jpg' exists
+  if [ -f "$album_cover" ]; then
+    # cover image found
+    cover_image_path=$(realpath "$album_cover" | sed "s|^$input_dir||")
+    
+    # remove leading slash (/) if it exists
+    cover_image_path="${cover_image_path#\/}"
+
+    # insert cover
+    echo "Inserting cover image: '$cover_image_path'"
+    insert_image "$album_id" "$cover_image_path"
+  fi
+
+  album_art="$album/AlbumArt.jpg"
+  if [ -f "$album_art" ]; then
+    # album art image found
+    cover_image_path=$(realpath "$album_art" | sed "s|^$input_dir||")
+    
+    # remove leading slash (/) if it exists
+    cover_image_path="${cover_image_path#\/}"
+
+    # insert cover
+    echo "Inserting cover image: '$cover_image_path'"
+    insert_image "$album_id" "$cover_image_path"
+  fi
 done
