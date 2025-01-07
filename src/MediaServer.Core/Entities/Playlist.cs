@@ -43,7 +43,7 @@ public class Playlist
     /// <summary>
     /// The tracks added to this playlist
     /// </summary>
-    public virtual ICollection<Track>? Track { get; set; }
+    public virtual ICollection<Track>? Tracks { get; set; }
     /// <summary>
     /// The images used to represent the playlist
     /// </summary>
