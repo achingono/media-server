@@ -23,6 +23,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Artist>>("artists"))!.AsQueryable();
+        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Artist>>("artists?$expand=ArtistImages($select=Id)"))!.AsQueryable();
     }
 }
