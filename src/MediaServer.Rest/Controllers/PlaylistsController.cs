@@ -2,9 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
 using MediaServer.Entities;
 using MediaServer.Data;
-using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 
 namespace MediaServer.Rest.Controllers;
 
@@ -92,7 +91,7 @@ public class PlaylistsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> JsonPatchWithModelState(Guid id,
-    [FromBody] JsonPatchDocument<Playlist> patchDoc,
+    [FromBody] JsonArray operations,
     [FromServices] EntityContext dbContext)
     {
         var playlist = await dbContext.Playlists
@@ -100,26 +99,30 @@ public class PlaylistsController : ControllerBase
                                     .SingleOrDefaultAsync(p => p.Id == id);
         if (playlist == null) return NotFound();
 
-        if (patchDoc != null)
+        if (operations != null)
         {
-            //patchDoc.ApplyTo(playlist, ModelState);
-
             // manually apply changes to the entity
-            patchDoc.Operations.ForEach(op =>
+            operations.ToList().ForEach(op =>
             {
-                if (op.path.Equals("/tracks", StringComparison.OrdinalIgnoreCase))
+                if (op == null) return;
+
+                var path = op["path"]?.GetValue<string>();
+                var action = op["op"]?.GetValue<string>();
+                var value = op["value"];
+
+                if ("/tracks".Equals(path, StringComparison.OrdinalIgnoreCase))
                 {
                     // value is a list of track ids
                     // get the tracks and add/remove them from the playlist
-                    foreach (var token in op.value as JArray)
+                    foreach (var node in value?.AsArray() ?? new JsonArray())
                     {
-                        var trackIdString = token["id"]?.ToString();
+                        var trackIdString = node["id"]?.GetValue<string>();
                         if (trackIdString != null && Guid.TryParse(trackIdString, out var trackId))
                         {
                             var track = dbContext.Tracks.Find(trackId);
                             if (track != null)
                             {
-                                switch (op.op.ToLowerInvariant())
+                                switch (action.ToLowerInvariant())
                                 {
                                     case "add":
                                         playlist.Tracks.Add(track);
@@ -132,9 +135,9 @@ public class PlaylistsController : ControllerBase
                         }
                     }
                 }
-                else if (op.path == "/name" && op.op == "replace")
+                else if (path == "/name" && action == "replace")
                 {
-                    var name = op.value?.ToString();
+                    var name = value?.GetValue<string>();
                     if (name != null)
                     {
                         playlist.Name = name;
