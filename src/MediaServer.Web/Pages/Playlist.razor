@@ -1,0 +1,34 @@
+@page "/playlists/{id:guid}"
+@rendermode InteractiveServer
+@inject HttpClient Client
+@inject IStateService<QueueState> QueueStateService
+@inject IStateService<PlayerState> PlayerStateService
+
+<PageTitle>@Entity.Name - Playlist</PageTitle>
+
+<FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Bottom"  Width="100%">
+    <div>
+        <Image Id="@Entity.PlaylistImages?.FirstOrDefault()?.Id" Title="@Entity.Name" Width="260" />       
+    </div>
+    <div>
+        <h6>Playlist</h6>
+        <h1>@Entity.Name</h1>
+        <h5>@(Entity.CreatedOn.Year) &bull; @(Collection?.Count()??0) songs &bull; @(TimeSpan.FromSeconds(Collection?.Sum(x => x.Duration)??0).ToString("g"))</h5>
+    </div>
+</FluentStack>
+
+<TrackList Items="@Collection" />
+
+@code {
+    [Parameter]
+    public Guid? Id { get; set; }
+    private Entities.Playlist Entity = new();
+    private IQueryable<Entities.Track>? Collection = Enumerable.Empty<Entities.Track>().AsQueryable();
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        Entity = (await Client.GetFromJsonAsync<IEnumerable<Entities.Playlist>>($"playlists?$filter=Id eq {Id}&$expand=PlaylistImages($select=Id)"))!.SingleOrDefault() ?? new();
+        Collection = (await Client.GetFromJsonAsync<IEnumerable<Entities.Track>>($"playlists/{Id}/tracks?$expand=Album($expand=Artist)"))!.AsQueryable() ??
+                    Enumerable.Empty<Entities.Track>().AsQueryable();
+    }
+}
