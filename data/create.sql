@@ -76,8 +76,10 @@ CREATE TABLE IF NOT EXISTS "Images" (
     "UpdatedBy_Email" TEXT NULL,
     "UpdatedBy_FullName" TEXT NULL,
     "ArtistId" TEXT NULL,
+    "PlaylistId" TEXT NULL,
     CONSTRAINT "FK_Images_Albums_AlbumId" FOREIGN KEY ("AlbumId") REFERENCES "Albums" ("Id") ON DELETE RESTRICT,
-    CONSTRAINT "FK_Images_Artists_ArtistId" FOREIGN KEY ("ArtistId") REFERENCES "Artists" ("Id") ON DELETE RESTRICT
+    CONSTRAINT "FK_Images_Artists_ArtistId" FOREIGN KEY ("ArtistId") REFERENCES "Artists" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_Images_Playlists_PlaylistId" FOREIGN KEY ("PlaylistId") REFERENCES "Playlists" ("Id") ON DELETE RESTRICT
 );
 CREATE TABLE IF NOT EXISTS "Tracks" (
     "Id" TEXT NOT NULL CONSTRAINT "PK_Tracks" PRIMARY KEY,
@@ -98,10 +100,10 @@ CREATE TABLE IF NOT EXISTS "Tracks" (
 );
 CREATE TABLE IF NOT EXISTS "PlaylistTrack" (
     "PlaylistsId" TEXT NOT NULL,
-    "TrackId" TEXT NOT NULL,
-    CONSTRAINT "PK_PlaylistTrack" PRIMARY KEY ("PlaylistsId", "TrackId"),
+    "TracksId" TEXT NOT NULL,
+    CONSTRAINT "PK_PlaylistTrack" PRIMARY KEY ("PlaylistsId", "TracksId"),
     CONSTRAINT "FK_PlaylistTrack_Playlists_PlaylistsId" FOREIGN KEY ("PlaylistsId") REFERENCES "Playlists" ("Id") ON DELETE CASCADE,
-    CONSTRAINT "FK_PlaylistTrack_Tracks_TrackId" FOREIGN KEY ("TrackId") REFERENCES "Tracks" ("Id") ON DELETE CASCADE
+    CONSTRAINT "FK_PlaylistTrack_Tracks_TracksId" FOREIGN KEY ("TracksId") REFERENCES "Tracks" ("Id") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "TrackFeature" (
     "TrackId" TEXT NOT NULL,
@@ -116,6 +118,7 @@ CREATE INDEX "IX_Albums_GenreId" ON "Albums" ("GenreId");
 CREATE UNIQUE INDEX "IX_Albums_Name_ArtistId" ON "Albums" ("Name", "ArtistId");
 CREATE INDEX "IX_Images_AlbumId" ON "Images" ("AlbumId");
 CREATE INDEX "IX_Images_ArtistId" ON "Images" ("ArtistId");
-CREATE INDEX "IX_PlaylistTrack_TrackId" ON "PlaylistTrack" ("TrackId");
+CREATE INDEX "IX_Images_PlaylistId" ON "Images" ("PlaylistId");
+CREATE INDEX "IX_PlaylistTrack_TracksId" ON "PlaylistTrack" ("TracksId");
 CREATE INDEX "IX_TrackFeature_ArtistId" ON "TrackFeature" ("ArtistId");
 CREATE INDEX "IX_Tracks_AlbumId" ON "Tracks" ("AlbumId");
