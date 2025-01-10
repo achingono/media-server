@@ -74,10 +74,17 @@ HorizontalAlignment="HorizontalAlignment.Center">
 
     protected void OnEnded()
     {
-        QueueStateService.Patch(state => {
-            state.Next();
-            state.AutoPlay = true;
-        });
+        if (QueueState.HasNext || QueueState.RepeatMode == RepeatMode.Single)
+        {
+            QueueStateService.Patch(state =>
+            {
+                state.Next();
+            });
+        }
+        else
+        {
+            PlayerStateService.Patch(state => state.Playing = false);
+        }
     }
 
     protected override void OnInitialized()
